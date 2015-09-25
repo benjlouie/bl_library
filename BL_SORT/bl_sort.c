@@ -222,6 +222,79 @@ void bl_sort_merge(void *base, size_t size, size_t var_size, int (*cmp_func)(con
         free(ctrl.ext_vbuf);
     }
 }
+    #define NRMERGE_SWAP(a, b)    ({ do{ size_t _size = var_size; \
+                                   char *_a = (a), *_b = (b); \
+                                   do { \
+                                      char _tmp = *_a; \
+                                      *_a++ = *_b; \
+                                      *_b++ = _tmp; \
+                                   } while(--_size > 0);  }while(0); })
+void bl_sort_nrmerge_m(char *base, size_t size, size_t var_size, size_t index, size_t block_size, void *buffer, int (*cmp_func)(const void *, const void *))
+{
+    size_t merge_block = 2 * block_size;
+    char *end;
+
+    if(size - index <= block_size) {
+        return;
+    }
+
+    if(size < index + merge_block) {
+        end = base + (size * var_size);
+    } else {
+        end = base + ((index + merge_block) * var_size);
+    }
+    /////////Merge here//////
+    char *i, *j, *k, *buf_end;
+    memcpy(buffer, base + (index * var_size), block_size * var_size); // fill buffer
+    i = base + (index * var_size);
+    j = buffer;
+    k = base + ((index + block_size) * var_size);
+    buf_end = buffer + (block_size * var_size);
+
+    for(; j < buf_end && k < end; i += var_size) {
+        if(cmp_func(j, k) < 0) {
+            NRMERGE_SWAP(i, j);
+            j += var_size;
+        } else {
+            NRMERGE_SWAP(i, k);
+            k += var_size;
+        }
+    }
+    while(j < buf_end) {
+        NRMERGE_SWAP(i, j);
+        i += var_size; j += var_size;
+    }
+}
+
+void bl_sort_nrmerge(void *base, size_t size, size_t var_size, int (*cmp_func)(const void *, const void *))
+{
+    size_t block_size = 0;
+    size_t merge_block = 0;
+    size_t i = 0;
+    void *buffer = NULL;
+
+    if(size <= 2) {
+        if(size == 2) {
+            if(cmp_func(base, (char *)base + var_size) > 0) {
+                NRMERGE_SWAP(base, base + var_size);
+            }
+        }
+        return;
+    }
+
+    //// size needs to be 2^something, find best one ////
+    buffer = malloc(size * var_size);
+
+    for(block_size = 1, merge_block = 2; merge_block < size; block_size *= 2) {
+        merge_block = 2 * block_size;
+        for(i = 0; i + merge_block < size; i += merge_block) {
+            bl_sort_nrmerge_m(base, size, var_size, i, block_size, buffer, (cmp_func));
+        }
+        bl_sort_nrmerge_m(base, size, var_size, i, block_size, buffer, (cmp_func));
+    }
+
+    free(buffer);
+}
 
 /*///// FIX /////*/
 void *bl_sort_quick_pivot(struct bl_sort_ctrl_t *ctrl, size_t left, size_t right)

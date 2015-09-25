@@ -18,6 +18,8 @@ void bl_sort_heap(void *base, size_t size, size_t var_size, int (*cmp_func)(cons
 /* void bl_sort_merge_m(struct bl_sort_ctrl *ctrl, size_t left, size_t middle, size_t right); */
 /* void bl_sort_merge_(struct bl_sort_ctrl *ctrl, size_t left, size_t right); */
 void bl_sort_merge(void *base, size_t size, size_t var_size, int (*cmp_func)(const void *, const void *));
+/* void bl_sort_nrmerge_m(char *base, size_t size, size_t var_size, size_t index, size_t block_size, void *buffer, int (*cmp_func)(const void *, const void *)); */
+void bl_sort_nrmerge(void *base, size_t size, size_t var_size, int (*cmp_func)(const void *, const void *));
 /* void *bl_sort_quick_pivot(struct bl_sort_ctrl_t *ctrl, size_t left, size_t right); */
 /* void *bl_sort_quick_partition(struct bl_sort_ctrl_t *ctrl, size_t left, size_t right); */
 /* void bl_sort_quick_(struct bl_sort_ctrl_t *ctrl, size_t left, size_t right); */

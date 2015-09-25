@@ -30,12 +30,18 @@ int main(void)
 	//bl_sort_insertion(test, arr_size, sizeof(int), (int_cmp));
 	//bl_sort_heap((void *)test, arr_size, sizeof(int), (int_cmp));
     //bl_sort_merge((void *)test, arr_size, sizeof(int), (int_cmp));
+    bl_sort_nrmerge((void *)test, arr_size, sizeof(int), (int_cmp));
 	//bl_sort_quick((void *)test, arr_size, sizeof(int), (int_cmp));
-	bl_sort_qsort((void *)test, arr_size, sizeof(int), (int_cmp));
+	//bl_sort_qsort((void *)test, arr_size, sizeof(int), (int_cmp));
 	//bl_sort_radix(test, arr_size);
 	//qsort(test, arr_size, sizeof(int), (int_cmp));
 	end = clock();
 	printf("time = %f\n", (float)(end - start) / CLOCKS_PER_SEC);
+	
+	for(i = 1; i < arr_size; i++) {
+	    if(test[i - 1] > test[i])
+            printf("NOT SORTED\n");
+    }
 
 	/*for(i = 0; i < arr_size; i++) {
 		printf("%d, ", test[i]);
