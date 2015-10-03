@@ -6,23 +6,26 @@ int main(void)
 {
 
     int i,j;
-    int direction;
     int fieldx = 10;
     int fieldy = 10;
     bl_path_fieldnode **field = NULL;
     bl_path_sten coords;
     
     // init
-    field = malloc(sizeof(bl_path_fieldnode) * fieldx * fieldy);
+    field = malloc(sizeof(bl_path_fieldnode *) * fieldx);
+    for(i = 0; i < fieldx; i++) {
+        field[i] = malloc(sizeof(bl_path_fieldnode) * fieldy);
+    }
+    
     for(i = 0; i < fieldx; i++) {
         for(j = 0; j < fieldy; j++) {
             field[i][j].open = 1;
         }
     }
-    coords.sx = 2;
-    coords.sy = 2;
-    coords.ex = 8;
-    coords.ey = 8;
+    coords.sx = 8;
+    coords.sy = 7;
+    coords.ex = 0;
+    coords.ey = 3;
 
     bl_path_arr_basic(field, fieldx, fieldy, coords);
 

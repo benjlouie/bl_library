@@ -15,13 +15,17 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     int chx = 0;
     int chy = 0;
     int visited_direction;
+    int i = 0;
     
     bl_path_pathnode **nodeField = NULL;
     
-    nodeField = calloc(fieldx * fieldy, sizeof(bl_path_pathnode)); // might need to malloc each row/column individually
-
+    nodeField = calloc(fieldx, sizeof(bl_path_pathnode *));
+    for(i = 0; i < fieldx; i++) {
+        nodeField[i] = calloc(fieldy, sizeof(bl_path_pathnode));
+    }
     
-    while (x != endx && y != endy) {
+    
+    while (x != endx || y != endy) {
         chx = (endx - x) > 0 ? 1 : (endx - x) < 0 ? -1 : 0;
         chy = (endy - y) > 0 ? 1 : (endy - y) < 0 ? -1 : 0;
         
@@ -29,7 +33,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         visited_direction = dir[chx + 1][chy + 1];
         nodeField[x][y].visited |= 1 << visited_direction;
         nodeField[x + chx][y + chy].visited |= 1 << ((visited_direction + 4) % 8);
-        printf("field[%d][%d].visited = %X", x, y, nodeField[x][y].visited);
+        printf("field[%d][%d].visited = %X\n", x, y, (int)nodeField[x][y].visited);
         // check if next node is open, if yes set appropriate pathnode.visited bit and go there (loop)
         // work on splits when the node is closed
         
