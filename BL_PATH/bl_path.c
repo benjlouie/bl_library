@@ -6,6 +6,19 @@
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord);
 int get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy);
 
+//  TODO: Delete this (debug stuff)
+#define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
+#define BYTETOBINARY(byte)  \
+  (byte & 0x80 ? 1 : 0), \
+  (byte & 0x40 ? 1 : 0), \
+  (byte & 0x20 ? 1 : 0), \
+  (byte & 0x10 ? 1 : 0), \
+  (byte & 0x08 ? 1 : 0), \
+  (byte & 0x04 ? 1 : 0), \
+  (byte & 0x02 ? 1 : 0), \
+  (byte & 0x01 ? 1 : 0) 
+
+
 // first try at pathfinding
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord) // should return a list (queue?) of which nodes to take to the end
 {
@@ -19,7 +32,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     
     bl_path_pathnode **nodeField = NULL;
     
-    nodeField = calloc(fieldx, sizeof(bl_path_pathnode *));
+    nodeField = malloc(fieldx * sizeof(bl_path_pathnode *));
     for(i = 0; i < fieldx; i++) {
         nodeField[i] = calloc(fieldy, sizeof(bl_path_pathnode));
     }
@@ -33,13 +46,15 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
             nodeField[x][y].visited |= 1 << visited_direction;
             nodeField[chx][chy].visited |= 1 << ((visited_direction + 4) % 8);
         } else {
-            // TODO: go through options on which way to go
-            ;
+            nodeField[x][y].visited |= 1 << visited_direction;
+            //nodeField[x][y].split |= ~(nodeField[x][y].visited); // options of where it can go
+            
+            // TODO: get alternate directions it could go, if it can only go backward, then go to the previous node and split to an alt direction
+            //visited_direction = (visited_direction + 9) % 8;
+            
         }
         
-        printf("field[%d][%d].visited = %X\n", x, y, (int)nodeField[x][y].visited);
-        // check if next node is open, if yes set appropriate pathnode.visited bit and go there (loop)
-        // work on splits when the node is closed
+        printf("field[%d][%d].visited = "BYTETOBINARYPATTERN"\n", x, y, BYTETOBINARY(nodeField[x][y].visited));
         
         x = chx;
         y = chy;
@@ -57,48 +72,31 @@ int get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
     rise = (endy - y);
     run = (endx - x);
     if(run == 0) {
-        if(rise > 0) {
-            slope = 3.0;
-        } else {
-            slope = -3.0;
-        }
+        slope = 3.0;
     } else if(rise == 0) {
-        if(run > 0) {
-            slope = 0.0;
-        } else {
-            slope = -0.0;
-        }
+        slope = 0.0;
     } else {
         slope = (float)rise / (float)run;
     }
-    
-    //     angles    |  slope
-    // -22.5 -- 22.5 | < 0.414
-    // 22.5 -- 67.5 | 0.414 -- 2.414
-    // 67.5 -- 90.0 | > 2.414
-    // from this get chx and chy from dir[]
     
     if(slope < 0) {
         slope *= -1;
     }
     
-    if(slope < 0.414) {
+    if(slope < 0.414) { // change in x only
         *chx = 1; *chy = 0;
-    } else if(slope > 2.414) {
+    } else if(slope > 2.414) { // change in y only
         *chx = 0; *chy = 1;
-    } else {
+    } else { // change in x and y
         *chx = 1; *chy = 1;
     }
     
-    if(rise < 0) {
-        *chy *= -1;
-    }
     if(run < 0) {
         *chx *= -1;
     }
-    
-    //*chx = (endx - x) > 0 ? 1 : (endx - x) < 0 ? -1 : 0;
-    //*chy = (endy - y) > 0 ? 1 : (endy - y) < 0 ? -1 : 0;
+    if(rise < 0) {
+        *chy *= -1;
+    }
     
     visited_direction = dir[*chx + 1][*chy + 1];
     *chx += x;
