@@ -4,7 +4,7 @@
 #include "bl_path.h"
 
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord);
-int get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy);
+byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy);
 
 //  TODO: Delete this (debug stuff)
 #define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
@@ -27,29 +27,35 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     int endx = coord.ex;
     int endy = coord.ey;
     int chx = 0, chy = 0;
-    int visited_direction;
-    int i = 0;
-    
+    byte visited_direction;
     bl_path_pathnode **nodeField = NULL;
+    bl_path_que que;
+    int i = 0;
     
     nodeField = malloc(fieldx * sizeof(bl_path_pathnode *));
     for(i = 0; i < fieldx; i++) {
         nodeField[i] = calloc(fieldy, sizeof(bl_path_pathnode));
     }
+    que_init(&que, 16); // TODO: change to calculated value of reasonable size
     
     
+    // TODO: add in que system
     while (x != endx || y != endy) {
         //find correct angle to move
         visited_direction = get_chxy_direction(x, y, endx, endy, &chx, &chy);
 
-        if(field[chx][chy].open) { // next node is open
+        if(field[chx][chy].open && !(nodeField[chx][chy].visited)) { // next node is open and unvisited
             nodeField[x][y].visited |= 1 << visited_direction;
             nodeField[chx][chy].visited |= 1 << ((visited_direction + 4) % 8);
         } else {
             nodeField[x][y].visited |= 1 << visited_direction;
-            //nodeField[x][y].split |= ~(nodeField[x][y].visited); // options of where it can go
             
             // TODO: get alternate directions it could go, if it can only go backward, then go to the previous node and split to an alt direction
+            // only go +-2 to visited direction
+            for(i = 1; i <= 2; i++) {
+                // TODO: add both directions to que here
+            }
+            
             //visited_direction = (visited_direction + 9) % 8;
             
         }
@@ -59,13 +65,16 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         x = chx;
         y = chy;
     }
+    
+    free(nodeField);
+    free(que);
 }
 
-int get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
+byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
 {
-    int dir[3][3] = {{5, 6, 7}, {4, -1, 0}, {3, 2, 1}};
+    byte dir[3][3] = {{5, 6, 7}, {4, -1, 0}, {3, 2, 1}};
     int rise, run;
-    int visited_direction;
+    byte visited_direction;
     float slope;
     
     // should only be one or the other here
@@ -103,4 +112,36 @@ int get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
     *chy += y;
     
     return visited_direction;
+}
+
+
+////// TODO: change que system to pointers (so nodes in the middle can be deleted) //////
+void que_init(bl_path_que *que, int init_spaces)
+{
+    que->que = malloc(sizeof(bl_path_coord) * init_spaces);
+    que->size = init_spaces;
+    que->index = 0;
+}
+
+void que_add(bl_path_que *que, bl_path_coord coord)
+{
+    if(que->index >= que->size) {
+        que->que = realloc(que->que, (que->size *= 2) * sizeof(bl_path_coord));
+    }
+    que->que[que->index++] = coord;
+}
+
+bl_path_coord que_del(bl_path_que *que)
+{
+    if(que->index > 0) {
+        que->index--;
+        return que->que[que->index + 1];
+    }
+    bl_path_coord bad = {-1, -1};
+    return bad;
+}
+
+void que_free(bl_path_que *que)
+{
+    free(que->que);
 }
