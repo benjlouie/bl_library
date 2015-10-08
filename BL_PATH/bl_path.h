@@ -10,7 +10,7 @@
 typedef struct bl_path_fieldnode_t bl_path_fieldnode;
 typedef struct bl_path_pathnode_t bl_path_pathnode;
 typedef struct bl_path_sten_t bl_path_sten;
-typedef struct bl_path_que_t bl_path_que;
+typedef struct bl_path_list_t bl_path_list;
 typedef struct bl_path_coord_t bl_path_coord;
 
 typedef char byte;
@@ -40,10 +40,13 @@ struct bl_path_coord_t {
     int y;
 };
 
-struct bl_path_que_t {
-     bl_path_coord *que;
+struct bl_path_list_t {
+     struct bl_path_list_elm {
+         bl_path_coord coord;
+         struct bl_path_list_elm *next;
+         struct bl_path_list_elm *prev;
+     } *head;
      int size;
-     int index;
 };
 
 

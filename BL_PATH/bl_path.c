@@ -5,6 +5,10 @@
 
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord);
 byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy);
+bl_path_list *list_init(void);
+void list_add(bl_path_list *list, bl_path_coord coord);
+bl_path_coord list_del(bl_path_list *list, struct bl_path_list_elm *elm);
+void list_free(bl_path_list *list);
 
 //  TODO: Delete this (debug stuff)
 #define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
@@ -29,21 +33,30 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     int chx = 0, chy = 0;
     byte visited_direction;
     bl_path_pathnode **nodeField = NULL;
-    bl_path_que que;
+    bl_path_list *list = NULL;
     int i = 0;
     
+    // initialization
     nodeField = malloc(fieldx * sizeof(bl_path_pathnode *));
     for(i = 0; i < fieldx; i++) {
         nodeField[i] = calloc(fieldy, sizeof(bl_path_pathnode));
     }
-    que_init(&que, 16); // TODO: change to calculated value of reasonable size
+    list = list_init();
+    list_add(list, (bl_path_coord) {x, y});
     
-    
-    // TODO: add in que system
-    while (x != endx || y != endy) {
-        //find correct angle to move
+    struct bl_path_list_elm *cur = list->head;
+    while (list->head != NULL) {
+        if(cur == NULL)
+            cur = list->head;
+            
+        x = cur->coord.x;
+        y = cur->coord.y;
+        if(x == endx && y == endy) {
+            // TODO: path found, cleanup the rest of the list
+            break;
+        }
+        
         visited_direction = get_chxy_direction(x, y, endx, endy, &chx, &chy);
-
         if(field[chx][chy].open && !(nodeField[chx][chy].visited)) { // next node is open and unvisited
             nodeField[x][y].visited |= 1 << visited_direction;
             nodeField[chx][chy].visited |= 1 << ((visited_direction + 4) % 8);
@@ -53,7 +66,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
             // TODO: get alternate directions it could go, if it can only go backward, then go to the previous node and split to an alt direction
             // only go +-2 to visited direction
             for(i = 1; i <= 2; i++) {
-                // TODO: add both directions to que here
+                ;// TODO: add both directions to que here
             }
             
             //visited_direction = (visited_direction + 9) % 8;
@@ -64,10 +77,12 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         
         x = chx;
         y = chy;
+        cur->coord = (bl_path_coord) {x, y};
+        cur = cur->next;
     }
     
     free(nodeField);
-    free(que);
+    list_free(list);
 }
 
 byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
@@ -116,32 +131,47 @@ byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
 
 
 ////// TODO: change que system to pointers (so nodes in the middle can be deleted) //////
-void que_init(bl_path_que *que, int init_spaces)
+bl_path_list *list_init(void)
 {
-    que->que = malloc(sizeof(bl_path_coord) * init_spaces);
-    que->size = init_spaces;
-    que->index = 0;
+    bl_path_list *list = malloc(sizeof(bl_path_list));
+    list->head = NULL;
+    list->size = 0;
+    return list;
 }
 
-void que_add(bl_path_que *que, bl_path_coord coord)
+void list_add(bl_path_list *list, bl_path_coord coord)
 {
-    if(que->index >= que->size) {
-        que->que = realloc(que->que, (que->size *= 2) * sizeof(bl_path_coord));
+    struct bl_path_list_elm *tmp = NULL;
+    tmp = malloc(sizeof(struct bl_path_list_elm));
+    tmp->next = list->head;
+    tmp->prev = NULL;
+    if(list->head != NULL)
+        list->head->prev = tmp;
+    list->head = tmp;
+    tmp->coord = coord;
+}
+
+bl_path_coord list_del(bl_path_list *list, struct bl_path_list_elm *elm)
+{
+    if(elm->prev == NULL) { // head node
+        list->head = elm->next;
+    } else {
+        elm->prev->next = elm->next;
     }
-    que->que[que->index++] = coord;
-}
-
-bl_path_coord que_del(bl_path_que *que)
-{
-    if(que->index > 0) {
-        que->index--;
-        return que->que[que->index + 1];
+    if(elm->next != NULL) {
+        elm->next->prev = elm->prev;
     }
-    bl_path_coord bad = {-1, -1};
-    return bad;
+    free(elm);
 }
 
-void que_free(bl_path_que *que)
+void list_free(bl_path_list *list)
 {
-    free(que->que);
+    struct bl_path_list_elm *cur = NULL, *next = NULL;;
+    cur = list->head;
+    while (cur != NULL) {
+        next = cur->next;
+        free(cur);
+        cur = next;
+    }
+    free(list);
 }
