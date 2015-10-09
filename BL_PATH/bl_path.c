@@ -26,12 +26,15 @@ void list_free(bl_path_list *list);
 // first try at pathfinding
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord) // should return a list (queue?) of which nodes to take to the end
 {
+    int dirx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+    int diry[8] = {1, 1, 0, -1, -1, -1, 0, 1};
     int x = coord.sx;
     int y = coord.sy;
     int endx = coord.ex;
     int endy = coord.ey;
     int chx = 0, chy = 0;
     byte visited_direction;
+    byte tmp_visited = 0;
     bl_path_pathnode **nodeField = NULL;
     bl_path_list *list = NULL;
     int i = 0;
@@ -57,23 +60,58 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         }
         
         visited_direction = get_chxy_direction(x, y, endx, endy, &chx, &chy);
+        nodeField[x][y].visited |= 1 << visited_direction;
         if(field[chx][chy].open && !(nodeField[chx][chy].visited)) { // next node is open and unvisited
-            nodeField[x][y].visited |= 1 << visited_direction;
             nodeField[chx][chy].visited |= 1 << ((visited_direction + 4) % 8);
         } else {
-            nodeField[x][y].visited |= 1 << visited_direction;
+            list_del(list, list->head);
+            // go in alternate directions
             
-            // TODO: get alternate directions it could go, if it can only go backward, then go to the previous node and split to an alt direction
-            // only go +-2 to visited direction
-            for(i = 1; i <= 2; i++) {
-                ;// TODO: add both directions to que here
+            ////////////// FIX THIS SECTION ///////////////
+            tmp_visited = (visited_direction + 9) % 8; // +1 visited
+            chx = x + dirx[tmp_visited];
+            chy = y + diry[tmp_visited];
+            nodeField[x][y].visited |= 1 << tmp_visited;
+            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                nodeField[x][y].split |= 1 << tmp_visited;
+                nodeField[chx][chy].visited |= 1 << ((tmp_visited + 4) % 8);
+                list_add(list, (bl_path_coord) {chx, chy});
             }
             
-            //visited_direction = (visited_direction + 9) % 8;
+            tmp_visited = (visited_direction + 7) % 8; // -1 visited
+            chx = x + dirx[tmp_visited];
+            chy = y + diry[tmp_visited];
+            nodeField[x][y].visited |= 1 << tmp_visited;
+            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                nodeField[x][y].split |= 1 << tmp_visited;
+                nodeField[chx][chy].visited |= 1 << ((tmp_visited + 4) % 8);
+                list_add(list, (bl_path_coord) {chx, chy});
+            }
+            
+            tmp_visited = (visited_direction + 10) % 8; // +2 visited
+            chx = x + dirx[tmp_visited];
+            chy = y + diry[tmp_visited];
+            nodeField[x][y].visited |= 1 << tmp_visited;
+            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                nodeField[x][y].split |= 1 << tmp_visited;
+                nodeField[chx][chy].visited |= 1 << ((tmp_visited + 4) % 8);
+                list_add(list, (bl_path_coord) {chx, chy});
+            }
+            
+            tmp_visited = (visited_direction + 6) % 8; // -2 visited
+            chx = x + dirx[tmp_visited];
+            chy = y + diry[tmp_visited];
+            nodeField[x][y].visited |= 1 << tmp_visited;
+            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                nodeField[x][y].split |= 1 << tmp_visited;
+                nodeField[chx][chy].visited |= 1 << ((tmp_visited + 4) % 8);
+                list_add(list, (bl_path_coord) {chx, chy});
+            }
+            ////////////////////////////////////////////////////
             
         }
         
-        printf("field[%d][%d].visited = "BYTETOBINARYPATTERN"\n", x, y, BYTETOBINARY(nodeField[x][y].visited));
+        printf("field[%d][%d].visited = "BYTETOBINARYPATTERN"\n", chx, chy, BYTETOBINARY(nodeField[chx][chy].visited));
         
         x = chx;
         y = chy;

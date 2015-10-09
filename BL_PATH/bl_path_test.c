@@ -22,7 +22,10 @@ int main(void)
             field[i][j].open = 1;
         }
     }
-    coords = (bl_path_sten) {9, 8, 1, 3};
+    
+    field[5][5].open = 0;
+    field[5][4].open = 0;
+    coords = (bl_path_sten) {1, 5, 8, 5};
 
     bl_path_arr_basic(field, fieldx, fieldy, coords);
 
