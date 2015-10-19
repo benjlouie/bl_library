@@ -94,6 +94,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
                     chx = x + dirx[tmp_visited];
                     chy = y + diry[tmp_visited];
                     // TODO: check this, not including it should stop pile up
+                    // however, may be needed when trying to find the optimal solution
                     if(field[chx][chy].open /*&& !(nodeField[chx][chy].visited)*/) {
                         nodeField[x][y].split |= 1 << tmp_visited;
                         nodeField[chx][chy].visited = 1 << ((tmp_visited + 4) % 8); //TODO: check if "=" is ok instead of "|="
