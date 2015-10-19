@@ -13,7 +13,7 @@ typedef struct bl_path_sten_t bl_path_sten;
 typedef struct bl_path_list_t bl_path_list;
 typedef struct bl_path_coord_t bl_path_coord;
 
-typedef char byte;
+typedef unsigned char byte;
 
 
 struct bl_path_fieldnode_t {
