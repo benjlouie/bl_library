@@ -10,6 +10,7 @@ void list_add(bl_path_list *list, bl_path_coord coord);
 void list_del(bl_path_list *list, struct bl_path_list_elm *elm);
 void list_free(bl_path_list *list);
 void print_pathnode(bl_path_fieldnode **field, bl_path_pathnode **nodeField, int fieldx, int fieldy);
+void print_list(bl_path_list *list);
 
 //  TODO: Delete this (debug stuff)
 #define BYTETOBINARYPATTERN "%d%d%d%d%d%d%d%d"
@@ -57,9 +58,9 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     cur = list->head;
     
     while (list->head != NULL) {
-
         //TODO: delete debug print
         //printf("field[%d][%d].visited = "BYTETOBINARYPATTERN"\n", chx, chy, BYTETOBINARY(nodeField[chx][chy].visited));
+        print_list(list);
         
         if(cur == NULL)
             cur = list->head;
@@ -242,6 +243,17 @@ void print_pathnode(bl_path_fieldnode **field, bl_path_pathnode **nodeField, int
     printf("   ");
     for(x = 0; x < fieldx; x++) {
         printf("%3d", x);
+    }
+    printf("\n");
+}
+
+void print_list(bl_path_list *list)
+{
+    struct bl_path_list_elm *cur = list->head;
+    
+    while(cur != NULL) {
+        printf("(%d,%d) ", cur->coord.x, cur->coord.y);
+        cur = cur->next;
     }
     printf("\n");
 }
