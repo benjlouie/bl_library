@@ -5,10 +5,12 @@
 
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord);
 byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy);
+byte valid_xy(int x, int y, int fieldx, int fieldy);
 bl_path_list *list_init(void);
 void list_add(bl_path_list *list, bl_path_coord coord);
 void list_del(bl_path_list *list, struct bl_path_list_elm *elm);
 void list_free(bl_path_list *list);
+void list_free_nodes(bl_path_list *list);
 void print_pathnode(bl_path_fieldnode **field, bl_path_pathnode **nodeField, int fieldx, int fieldy);
 void print_list(bl_path_list *list);
 
@@ -41,6 +43,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     bl_path_pathnode **nodeField = NULL;
     bl_path_list *list = NULL;
     struct bl_path_list_elm *cur = NULL;
+    struct bl_path_list_elm *tmp = NULL;
     int i = 0;
     
     // initialization
@@ -58,10 +61,6 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     cur = list->head;
     
     while (list->head != NULL) {
-        //TODO: delete debug print
-        //printf("field[%d][%d].visited = "BYTETOBINARYPATTERN"\n", chx, chy, BYTETOBINARY(nodeField[chx][chy].visited));
-        print_list(list);
-        
         if(cur == NULL)
             cur = list->head;
 
@@ -77,52 +76,75 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         // add each split direction to the list
         visited_direction = get_chxy_direction(x, y, endx, endy, &chx, &chy);
         nodeField[x][y].split |= 1 << visited_direction;
-        
-        // TODO: put in stopping case for out of bounds chx,chy moves
-        if(field[chx][chy].open && !(nodeField[chx][chy].visited)) { // next node is open and unvisited
-            nodeField[chx][chy].visited |= 1 << ((visited_direction + 4) % 8);
-        } else {
-            // go in alternate directions
-            list_del(list, cur);
-            cur = NULL;
-            for(i = 0; i < 7; i++) {
-                tmp_visited = (visited_direction + split_offset[i]) % 8; // 4 possible split directions
+        if(valid_xy(x, y, fieldx, fieldy)) {
+            // TODO: put in stopping case for out of bounds chx,chy moves
+            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) { // next node is open and unvisited
+                nodeField[chx][chy].visited = 1 << ((visited_direction + 4) % 8);
+            } else {
+                // go in alternate directions
+                for(i = 0; i < 7; i++) {
+                    tmp_visited = (visited_direction + split_offset[i]) % 8; // 8 possible split directions
 
-                if(nodeField[x][y].split & (1 << tmp_visited)) {
-                    continue; // already visited
-                } else {
-                    // not visited, create new split
-                    chx = x + dirx[tmp_visited];
-                    chy = y + diry[tmp_visited];
-                    // TODO: check this, not including it should stop pile up
-                    // however, may be needed when trying to find the optimal solution
-                    if(field[chx][chy].open /*&& !(nodeField[chx][chy].visited)*/) {
-                        nodeField[x][y].split |= 1 << tmp_visited;
-                        nodeField[chx][chy].visited = 1 << ((tmp_visited + 4) % 8); //TODO: check if "=" is ok instead of "|="
-                        list_add(list, (bl_path_coord) {chx, chy});
-                        break; // TODO:  look at next TODO below (should end up getting optimal solution when there's no break)
+                    if(!(nodeField[x][y].split & (1 << tmp_visited))) {
+                        // not visited, create new split
+                        chx = x + dirx[tmp_visited];
+                        chy = y + diry[tmp_visited];
+                        if(valid_xy(chx, chy, fieldx, fieldy)) {
+                            // TODO: check this, not including it should stop pile up
+                            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                                nodeField[x][y].split |= (1 << tmp_visited);
+                                nodeField[chx][chy].visited = 1 << ((tmp_visited + 4) % 8); //TODO: check if "=" is ok instead of "|="
+                                list_add(list, (bl_path_coord) {chx, chy});
+                                if(!FIND_OPTIMAL)
+                                    break; // finds first path, not always optimal (much less node expansion)
+                            }
+                        }
                     }
                 }
+
+                tmp = cur->next;
+                list_del(list, cur);
+                cur = tmp;
+                continue;
             }
-            if(i == 7) {
-                // go back one node
-                //TODO: with break above: find out what to do when [x][y] is the start node (needs to go backwards)
-                tmp_visited = nodeField[x][y].visited;
-                for(i = 0; !(tmp_visited & 0x1); i++) { // find direction of previous node
-                    tmp_visited >>= 1;
-                }
-                chx = x + dirx[i];
-                chy = y + diry[i];
-                list_add(list, (bl_path_coord) {chx, chy});
-            }
-            continue;
+
+            x = chx;
+            y = chy;
+            cur->coord = (bl_path_coord) {x, y};
+            cur = cur->next;
+        } else {
+            tmp = cur->next;
+            list_del(list, cur);
+            cur = tmp;
         }
-        
-        x = chx;
-        y = chy;
-        cur->coord = (bl_path_coord) {x, y};
+    }
+    
+    list_free_nodes(list);
+    list_add(list, (bl_path_coord) {endx, endy});
+    x = coord.sx; y = coord.sy;
+    chx = endx; chy = endy;
+    while(chx != x || chy != y) {
+        tmp_visited = nodeField[chx][chy].visited;
+        for(i = 0; !(tmp_visited & 0x1); i++) { // find direction of previous node
+            tmp_visited >>= 1;
+        }
+        chx = chx + dirx[i];
+        chy = chy + diry[i];
+        list_add(list, (bl_path_coord) {chx, chy});
+    }
+    print_list(list);
+    
+    for(x = 0; x < fieldx; x++) {
+        for(y = 0; y < fieldy; y++) {
+            nodeField[x][y].visited = 0;
+        }
+    }
+    cur = list->head;
+    while(cur != NULL) {
+        nodeField[cur->coord.x][cur->coord.y].visited = 255;
         cur = cur->next;
     }
+    
     
     //TODO: delete this debug printing
     print_pathnode(field, nodeField, fieldx, fieldy);
@@ -175,6 +197,10 @@ byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
     return visited_direction;
 }
 
+byte valid_xy(int x, int y, int fieldx, int fieldy)
+{
+    return !((x >= fieldx || x < 0) || (y >= fieldy || y < 0));
+}
 
 ////// TODO: change que system to pointers (so nodes in the middle can be deleted) //////
 bl_path_list *list_init(void)
@@ -220,6 +246,18 @@ void list_free(bl_path_list *list)
         cur = next;
     }
     free(list);
+}
+
+void list_free_nodes(bl_path_list *list)
+{
+    struct bl_path_list_elm *cur = NULL, *next = NULL;;
+    cur = list->head;
+    while (cur != NULL) {
+        next = cur->next;
+        free(cur);
+        cur = next;
+    }
+    list->head = NULL;
 }
 
 void print_pathnode(bl_path_fieldnode **field, bl_path_pathnode **nodeField, int fieldx, int fieldy)

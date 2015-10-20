@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define FIND_OPTIMAL 1 // if yes(1), finds the optimal path. if no(0), finds a <= optimal path (faster)
+
 typedef struct bl_path_fieldnode_t bl_path_fieldnode;
 typedef struct bl_path_pathnode_t bl_path_pathnode;
 typedef struct bl_path_sten_t bl_path_sten;
