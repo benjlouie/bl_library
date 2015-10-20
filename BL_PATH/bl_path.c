@@ -32,7 +32,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
 {
     int dirx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
     int diry[8] = {1, 1, 0, -1, -1, -1, 0, 1};
-    int split_offset[7] = {9, 7, 10, 6, 11, 5, 12};
+    int split_offset[7] = {1, 7, 2, 6, 3, 5, 4};
     int x = coord.sx;
     int y = coord.sy;
     int endx = coord.ex;
@@ -61,6 +61,10 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
     cur = list->head;
     
     while (list->head != NULL) {
+        
+        //TODO: delete debug print
+        //print_list(list);
+        
         if(cur == NULL)
             cur = list->head;
 
@@ -77,8 +81,8 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         visited_direction = get_chxy_direction(x, y, endx, endy, &chx, &chy);
         nodeField[x][y].split |= 1 << visited_direction;
         if(valid_xy(x, y, fieldx, fieldy)) {
-            // TODO: put in stopping case for out of bounds chx,chy moves
-            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) { // next node is open and unvisited
+            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                // next node is open and unvisited
                 nodeField[chx][chy].visited = 1 << ((visited_direction + 4) % 8);
             } else {
                 // go in alternate directions
@@ -91,12 +95,13 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
                         chy = y + diry[tmp_visited];
                         if(valid_xy(chx, chy, fieldx, fieldy)) {
                             // TODO: check this, not including it should stop pile up
-                            if(field[chx][chy].open && !(nodeField[chx][chy].visited)) {
+                            if(field[chx][chy].open /*&& !(nodeField[chx][chy].visited)*/) {
                                 nodeField[x][y].split |= (1 << tmp_visited);
-                                nodeField[chx][chy].visited = 1 << ((tmp_visited + 4) % 8); //TODO: check if "=" is ok instead of "|="
+                                if(!(nodeField[chx][chy].visited)) //TODO: should avoid inf loops when rebuilding, CHECK
+                                    nodeField[chx][chy].visited = 1 << ((tmp_visited + 4) % 8);
                                 list_add(list, (bl_path_coord) {chx, chy});
                                 if(!FIND_OPTIMAL)
-                                    break; // finds first path, not always optimal (much less node expansion)
+                                    break; // stops after creating 1 split (much less node expansion, path not optimal)
                             }
                         }
                     }
@@ -113,6 +118,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
             cur->coord = (bl_path_coord) {x, y};
             cur = cur->next;
         } else {
+            // invalid x,y delete that node
             tmp = cur->next;
             list_del(list, cur);
             cur = tmp;

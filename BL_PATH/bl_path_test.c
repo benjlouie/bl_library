@@ -38,7 +38,7 @@ int main(void)
     starty = rand() % fieldy;
     endx = rand() % fieldx;
     endy = rand() % fieldy;
-    
+
     field[startx][starty].open = 1;
     field[endx][endy].open = 1;
     
