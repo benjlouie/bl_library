@@ -76,8 +76,6 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         }
         
         // go the most direct way
-        // if unavailable, split into the 4 surrounding possible directions
-        // add each split direction to the list
         visited_direction = get_chxy_direction(x, y, endx, endy, &chx, &chy);
         nodeField[x][y].split |= 1 << visited_direction;
         if(valid_xy(x, y, fieldx, fieldy)) {
@@ -85,18 +83,18 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
                 // next node is open and unvisited
                 nodeField[chx][chy].visited = 1 << ((visited_direction + 4) % 8);
             } else {
-                // go in alternate directions
+                // go in alternate directions (7 alts)
                 for(i = 0; i < 7; i++) {
-                    tmp_visited = (visited_direction + split_offset[i]) % 8; // 8 possible split directions
+                    tmp_visited = (visited_direction + split_offset[i]) % 8;
 
                     if(!(nodeField[x][y].split & (1 << tmp_visited))) {
                         // not visited, create new split
+                        nodeField[x][y].split |= (1 << tmp_visited);
                         chx = x + dirx[tmp_visited];
                         chy = y + diry[tmp_visited];
                         if(valid_xy(chx, chy, fieldx, fieldy)) {
-                            // TODO: check this, not including it should stop pile up
-                            if(field[chx][chy].open /*&& !(nodeField[chx][chy].visited)*/) {
-                                nodeField[x][y].split |= (1 << tmp_visited);
+                            // TODO: check this, not including .visited it should stop pile up
+                            if(field[chx][chy].open/* && !(nodeField[chx][chy].visited)*/) {
                                 if(!(nodeField[chx][chy].visited)) //TODO: should avoid inf loops when rebuilding, CHECK
                                     nodeField[chx][chy].visited = 1 << ((tmp_visited + 4) % 8);
                                 list_add(list, (bl_path_coord) {chx, chy});
@@ -125,6 +123,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         }
     }
     
+    // rebuild found path
     list_free_nodes(list);
     list_add(list, (bl_path_coord) {endx, endy});
     x = coord.sx; y = coord.sy;
@@ -138,8 +137,8 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         chy = chy + diry[i];
         list_add(list, (bl_path_coord) {chx, chy});
     }
+    //TODO: delete debug print
     print_list(list);
-    
     for(x = 0; x < fieldx; x++) {
         for(y = 0; y < fieldy; y++) {
             nodeField[x][y].visited = 0;
@@ -150,7 +149,6 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
         nodeField[cur->coord.x][cur->coord.y].visited = 255;
         cur = cur->next;
     }
-    
     
     //TODO: delete this debug printing
     print_pathnode(field, nodeField, fieldx, fieldy);
@@ -166,35 +164,32 @@ byte get_chxy_direction(int x, int y, int endx, int endy, int *chx, int *chy)
     byte visited_direction;
     float slope;
     
-    // should only be one or the other here
     rise = (endy - y);
     run = (endx - x);
-    if(run == 0) {
+    if(run == 0)
         slope = 3.0;
-    } else if(rise == 0) {
+    else if(rise == 0)
         slope = 0.0;
-    } else {
+    else
         slope = (float)rise / (float)run;
-    }
     
-    if(slope < 0) {
+    if(slope < 0)
         slope *= -1;
-    }
     
-    if(slope < 0.414) { // change in x only
+    if(slope < 0.414) {// change in x only
         *chx = 1; *chy = 0;
-    } else if(slope > 2.414) { // change in y only
+    }
+    else if(slope > 2.414) {// change in y only
         *chx = 0; *chy = 1;
-    } else { // change in x and y
+    }
+    else {// change in x and y
         *chx = 1; *chy = 1;
     }
     
-    if(run < 0) {
+    if(run < 0)
         *chx *= -1;
-    }
-    if(rise < 0) {
+    if(rise < 0)
         *chy *= -1;
-    }
     
     visited_direction = dir[*chx + 1][*chy + 1];
     *chx += x;
@@ -231,20 +226,19 @@ void list_add(bl_path_list *list, bl_path_coord coord)
 
 void list_del(bl_path_list *list, struct bl_path_list_elm *elm)
 {
-    if(elm->prev == NULL) { // head node
+    if(elm->prev == NULL) // head node
         list->head = elm->next;
-    } else {
+    else
         elm->prev->next = elm->next;
-    }
-    if(elm->next != NULL) {
+    if(elm->next != NULL)
         elm->next->prev = elm->prev;
-    }
+        
     free(elm);
 }
 
 void list_free(bl_path_list *list)
 {
-    struct bl_path_list_elm *cur = NULL, *next = NULL;;
+    struct bl_path_list_elm *cur = NULL, *next = NULL;
     cur = list->head;
     while (cur != NULL) {
         next = cur->next;
@@ -256,7 +250,7 @@ void list_free(bl_path_list *list)
 
 void list_free_nodes(bl_path_list *list)
 {
-    struct bl_path_list_elm *cur = NULL, *next = NULL;;
+    struct bl_path_list_elm *cur = NULL, *next = NULL;
     cur = list->head;
     while (cur != NULL) {
         next = cur->next;
