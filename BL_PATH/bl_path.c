@@ -32,7 +32,7 @@ void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_pat
 {
     int dirx[8] = {0, 1, 1, 1, 0, -1, -1, -1};
     int diry[8] = {1, 1, 0, -1, -1, -1, 0, 1};
-    int split_offset[7] = {1, 7, 2, 6, 3, 5, 4};
+    int split_offset[7] = {4, 5, 3, 6, 2, 7, 1};
     int x = coord.sx;
     int y = coord.sy;
     int endx = coord.ex;
