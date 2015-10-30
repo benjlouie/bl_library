@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "bl_path.h"
+#include "bl_path_astar.h"
 
 
 int main(void)

@@ -53,5 +53,12 @@ struct bl_path_list_t {
 
 
 void bl_path_arr_basic(bl_path_fieldnode **field, int fieldx, int fieldy, bl_path_sten coord);
+bl_path_list *list_init(void);
+void list_add(bl_path_list *list, bl_path_coord coord);
+void list_del(bl_path_list *list, struct bl_path_list_elm *elm);
+void list_free(bl_path_list *list);
+void list_free_nodes(bl_path_list *list);
+void print_pathnode(bl_path_fieldnode **field, bl_path_pathnode **nodeField, int fieldx, int fieldy);
+void print_list(bl_path_list *list);
 
 #endif
