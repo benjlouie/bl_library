@@ -16,8 +16,7 @@ struct bl_heap_t {
     float growthRate;
     size_t constGrowthRate; // 0 if not a constant growth rate
 };
-
-// book keeping funcions
+// heap book keeping funcions
 bl_heap *bl_heap_new(size_t initSize, int (*cmp_func)(const void *, const void *));
 void bl_heap_set_growthRate(bl_heap *heap, float growthRate);
 void bl_heap_set_constGrowthRate(bl_heap *heap, size_t constGrowthRate);
@@ -30,14 +29,39 @@ void *bl_heap_pop(bl_heap *heap);
 void sift_up(bl_heap *heap, size_t index);
 void sift_down(bl_heap *heap, size_t index);
 
+struct bl_dheap_t {
+    // heap data
+    void **arr;
+    int dNum;
+    size_t heapSize;
+    size_t arraySize;
+    int (*cmp_func)(const void *, const void *);
+    
+    // book keeping
+    float growthRate;
+    size_t constGrowthRate; // 0 if not a constant growth rate
+};
+// dheap book keeping funcions
+bl_dheap *bl_dheap_new(size_t initSize, unsigned dNum, int (*cmp_func)(const void *, const void *));
+void bl_dheap_set_growthRate(bl_dheap *dheap, float growthRate);
+void bl_dheap_set_constGrowthRate(bl_dheap *dheap, size_t constGrowthRate);
+void bl_dheap_trimToSize(bl_dheap *dheap, size_t size);
+void bl_dheap_free(bl_dheap *dheap);
+// dheap operations
+void bl_dheap_push(bl_dheap *dheap, void * const data);
+void *bl_dheap_peek(bl_dheap *dheap);
+void *bl_dheap_pop(bl_dheap *dheap);
+void dsift_up(bl_dheap *dheap, size_t index);
+void dsift_down(bl_dheap *dheap, size_t index);
 
-// book keeping functions
+
+// heap book keeping functions
 void bl_heap_set_growthRate(bl_heap *heap, float growthRate)
 {
     if(growthRate > 1) {
         heap->growthRate = growthRate;
+        heap->constGrowthRate = 0; // to ensure the new growth rate is used
     }
-    heap->constGrowthRate = 0; // to ensure the new growth rate is used
 }
 
 void bl_heap_set_constGrowthRate(bl_heap *heap, size_t constGrowthRate)
@@ -56,7 +80,6 @@ void bl_heap_trimToSize(bl_heap *heap, size_t size)
     }
     heap->arr = realloc(heap->arr, sizeof(void *) * size);
     heap->arraySize = size;
-    printf("trimmed size = %lu\n", (long unsigned)heap->arraySize);
 }
 
 void bl_heap_free(bl_heap *heap)
@@ -91,7 +114,6 @@ void bl_heap_push(bl_heap *heap, void * const data)
             heap->arraySize = heap->arraySize * heap->growthRate + 1;
             heap->arr = realloc(heap->arr, sizeof(void *) * heap->arraySize);
         }
-        printf("arraysize = %lu\n", (long unsigned)heap->arraySize);
     }
     
     size_t index = heap->heapSize - 1;
@@ -169,5 +191,151 @@ void sift_down(bl_heap *heap, size_t index)
             }
         }
         index = maxChild;
+    }
+}
+
+
+
+// dheap book keeping funcions
+void bl_dheap_set_growthRate(bl_dheap *dheap, float growthRate)
+{
+    if(growthRate > 1) {
+        dheap->growthRate = growthRate;
+        dheap->constGrowthRate = 0; // to ensure the new growth rate is used
+    }
+}
+
+void bl_dheap_set_constGrowthRate(bl_dheap *dheap, size_t constGrowthRate)
+{
+    if(constGrowthRate != 0)
+        dheap->constGrowthRate = constGrowthRate;
+}
+
+void bl_dheap_trimToSize(bl_dheap *dheap, size_t size)
+{
+    if(dheap->heapSize > size) {
+        size = dheap->heapSize;
+    }
+    if(size == dheap->arraySize) {
+        return;
+    }
+    dheap->arr = realloc(dheap->arr, sizeof(void *) * size);
+    dheap->arraySize = size;
+}
+
+void bl_dheap_free(bl_dheap *dheap)
+{
+    if(dheap->arr)
+        free(dheap->arr);
+    free(dheap);
+
+}
+
+// dheap operations
+bl_dheap *bl_dheap_new(size_t initSize, unsigned dNum, int (*cmp_func)(const void *, const void *))
+{
+    if(dNum == 0) {
+        errno = EINVAL;
+        return NULL;
+    }
+    bl_dheap *dheap = malloc(sizeof(bl_dheap));
+    dheap->arr = malloc(sizeof(void *) * initSize);
+    dheap->dNum = dNum;
+    dheap->heapSize = 0;
+    dheap->arraySize = initSize;
+    dheap->cmp_func = cmp_func;
+    // book keeping variables
+    dheap->growthRate = 1.5;
+    dheap->constGrowthRate = 0;
+    return dheap;
+}
+
+void bl_dheap_push(bl_dheap *dheap, void * const data)
+{
+    dheap->heapSize++;
+    if(dheap->heapSize > dheap->arraySize) { //needs more space
+        if(dheap->constGrowthRate != 0) {
+            dheap->arraySize = dheap->arraySize + dheap->constGrowthRate;
+            dheap->arr = realloc(dheap->arr, sizeof(void *) * dheap->arraySize);
+        } else {
+            dheap->arraySize = dheap->arraySize * dheap->growthRate + 1;
+            dheap->arr = realloc(dheap->arr, sizeof(void *) * dheap->arraySize);
+        }
+    }
+    
+    size_t index = dheap->heapSize - 1;
+    dheap->arr[index] = data;
+    dsift_up(dheap, index);
+}
+
+void *bl_dheap_peek(bl_dheap *dheap)
+{
+    if(dheap->heapSize > 0)
+        return dheap->arr[0];
+    else
+        return NULL;
+}
+
+void *bl_dheap_pop(bl_dheap *dheap)
+{
+    void *retVal = NULL;
+    
+    if(dheap->heapSize > 0) {
+        retVal = dheap->arr[0];
+        dheap->arr[0] = dheap->arr[dheap->heapSize - 1];
+        dheap->heapSize--;
+        dsift_down(dheap, 0);
+    }
+    
+    return retVal;
+}
+
+void dsift_up(bl_dheap *dheap, size_t index)
+{
+    size_t parent;
+    void *tmp;
+    
+    while(index != 0) {
+        parent = (index - 1) / dheap->dNum;
+        if(dheap->cmp_func(dheap->arr[index], dheap->arr[parent]) > 0) {
+            tmp = dheap->arr[parent];
+            dheap->arr[parent] = dheap->arr[index];
+            dheap->arr[index] = tmp;
+            index = parent;
+        } else {
+            break;
+        }
+    }
+}
+
+void dsift_down(bl_dheap *dheap, size_t index)
+{
+    size_t curChild;
+    size_t maxChild, maxIndex;
+    void *tmp;
+    
+    while(index < dheap->heapSize)
+    {
+        maxChild = index * dheap->dNum + 1;
+        if(maxChild > dheap->heapSize)
+            break;
+        maxIndex = index * dheap->dNum + dheap->dNum + 1; // +1 to work with next for-loop
+        if(maxIndex > dheap->heapSize)
+            maxIndex = dheap->heapSize;
+        // find max child
+        for(curChild = maxChild + 1; curChild < maxIndex; curChild++) {
+            if(dheap->cmp_func(dheap->arr[curChild], dheap->arr[maxChild]) > 0) {
+                maxChild = curChild;
+            }
+        }
+        // compare max child to index, swap
+        if(dheap->cmp_func(dheap->arr[maxChild], dheap->arr[index]) > 0) {
+            tmp = dheap->arr[index];
+            dheap->arr[index] = dheap->arr[maxChild];
+            dheap->arr[maxChild] = tmp;
+            index = maxChild;
+        } else {
+            break;
+        }
     }
 }

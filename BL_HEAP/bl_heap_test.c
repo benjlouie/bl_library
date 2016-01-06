@@ -10,7 +10,7 @@ int main(void)
     int i = 0;
     int *arr;
     //int arr[10] = {5, 3, 0, 7, 7, 8, 8, 5, 5, 4};
-    int arr_size = 16;
+    int arr_size = 17;
     
     arr = malloc(sizeof(int) * arr_size);
     
@@ -21,23 +21,23 @@ int main(void)
     }
     printf("\n");
     
-    bl_heap *heap = bl_heap_new(100, (int_cmp));
-    //bl_heap_set_growthRate(heap, 2.6);
-    //bl_heap_set_constGrowthRate(heap, 10);
+    bl_dheap *dheap = bl_dheap_new(10, 4, (int_cmp));
+    //bl_dheap_set_growthRate(dheap, 2.6);
+    //bl_dheap_set_constGrowthRate(dheap, 11);
     for(i = 0; i < arr_size; i++) {
-        bl_heap_push(heap, &arr[i]);
+        bl_dheap_push(dheap, &arr[i]);
     }
     
-    bl_heap_trimToSize(heap, 0);
+    bl_dheap_trimToSize(dheap, 0);
     
-    printf("%d\n", *(int *)bl_heap_peek(heap));
+    printf("%d\n", *(int *)bl_dheap_peek(dheap));
     
     for(i = 0; i < arr_size; i++) {
-        int *tmp = bl_heap_pop(heap);
+        int *tmp = bl_dheap_pop(dheap);
         printf("%d, ", *tmp);
     }
     
-    bl_heap_free(heap);
+    bl_dheap_free(dheap);
     
     return 0;
 }
