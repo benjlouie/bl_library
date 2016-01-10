@@ -3,8 +3,6 @@
 
 #include "bl_heap.h"
 
-// TODO: make d-ary heap structure and functions
-
 struct bl_heap_t {
     // heap data
     void **arr;
