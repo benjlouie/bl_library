@@ -53,7 +53,12 @@ void dsift_up(bl_dheap *dheap, size_t index);
 void dsift_down(bl_dheap *dheap, size_t index);
 
 
-// heap book keeping functions
+//// heap book keeping functions ////
+/**
+ * sets the multiplier rate the array grows at when it needs more space
+ * @param heap the heap to modify
+ * @param growthRate the new growth rate, must be greater than 1 for the rate to change
+ */
 void bl_heap_set_growthRate(bl_heap *heap, float growthRate)
 {
     if(growthRate > 1) {
@@ -62,12 +67,23 @@ void bl_heap_set_growthRate(bl_heap *heap, float growthRate)
     }
 }
 
+/**
+ * sets the growth rate to a constant value when more space is needed
+ * @param heap the heap to modify
+ * @param constGrowthRate the constant number of array spaces to grow by
+ */
 void bl_heap_set_constGrowthRate(bl_heap *heap, size_t constGrowthRate)
 {
     if(constGrowthRate != 0)
         heap->constGrowthRate = constGrowthRate;
 }
 
+/**
+ * Resizes to the heap array to the specified size or to the minimum space needed
+ * @param heap the heap to modify
+ * @param size new size of the array, if less than minimum needed: the minimum size will be used
+ * @note call with size=0 to shrink the heap to the minimum size needed
+ */
 void bl_heap_trimToSize(bl_heap *heap, size_t size)
 {
     if(heap->heapSize > size) {
@@ -80,6 +96,10 @@ void bl_heap_trimToSize(bl_heap *heap, size_t size)
     heap->arraySize = size;
 }
 
+/**
+ * frees the heap
+ * @param heap the heap to free
+ */
 void bl_heap_free(bl_heap *heap)
 {
     if(heap->arr)
@@ -87,7 +107,14 @@ void bl_heap_free(bl_heap *heap)
     free(heap);
 }
 
-// heap operations
+//// heap operations ////
+/**
+ * creates a new heap
+ * @param initSize initial size of the array containing the heap
+ * @param cmp_func() the function used to compare elements of the heap
+ * @note the cmp_func() determines if it is a min or max heap
+ * @return the newly created heap
+ */
 bl_heap *bl_heap_new(size_t initSize, int (*cmp_func)(const void *, const void *))
 {
     bl_heap *heap = malloc(sizeof(bl_heap));
@@ -101,6 +128,13 @@ bl_heap *bl_heap_new(size_t initSize, int (*cmp_func)(const void *, const void *
     return heap;
 }
 
+/**
+ * add an element to the heap
+ * @param heap the heap to add to
+ * @param data pointer to the data that will be added
+ * @note data will be compared using cmp_func()
+ * @see bl_heap_new()
+ */
 void bl_heap_push(bl_heap *heap, void * const data)
 {
     heap->heapSize++;
@@ -119,6 +153,11 @@ void bl_heap_push(bl_heap *heap, void * const data)
     sift_up(heap, index);
 }
 
+/**
+ * peek at the max/min element of the heap
+ * @param heap the heap
+ * @return pointer to the data of the min/max element
+ */
 void *bl_heap_peek(bl_heap *heap)
 {
     if(heap->heapSize > 0)
@@ -127,6 +166,11 @@ void *bl_heap_peek(bl_heap *heap)
         return NULL;
 }
 
+/**
+ * removes the min/max element of the heap
+ * @param heap the heap to pop from
+ * @return pointer to the data of the popped element
+ */
 void *bl_heap_pop(bl_heap *heap)
 {
     void *retVal = NULL;
@@ -141,6 +185,11 @@ void *bl_heap_pop(bl_heap *heap)
     return retVal;
 }
 
+/**
+ * ensures the index element is correct going towards the root, sifts up in a way
+ * @param heap the heap
+ * @param index index of the element to sift up
+ */
 void sift_up(bl_heap *heap, size_t index)
 {
     size_t parent;
@@ -159,6 +208,11 @@ void sift_up(bl_heap *heap, size_t index)
     }
 }
 
+/**
+ * ensures the index element is correct going towards the leaves, sifts down in a way
+ * @param heap the heap
+ * @param index index of the element to be sifted down
+ */
 void sift_down(bl_heap *heap, size_t index)
 {
     size_t lChild, rChild;
@@ -194,7 +248,13 @@ void sift_down(bl_heap *heap, size_t index)
 
 
 
-// dheap book keeping funcions
+//// dheap book keeping funcions ////
+
+/**
+ * sets the multiplier rate the array grows at when it needs more space
+ * @param dheap the d-ary heap to modify
+ * @param growthRate the new growth rate, must be greater than 1 for the rate to change
+ */
 void bl_dheap_set_growthRate(bl_dheap *dheap, float growthRate)
 {
     if(growthRate > 1) {
@@ -203,12 +263,23 @@ void bl_dheap_set_growthRate(bl_dheap *dheap, float growthRate)
     }
 }
 
+/**
+ * sets the growth rate to a constant value when more space is needed
+ * @param dheap the d-ary heap to modify
+ * @param constGrowthRate the constant number of array spaces to grow by
+ */
 void bl_dheap_set_constGrowthRate(bl_dheap *dheap, size_t constGrowthRate)
 {
     if(constGrowthRate != 0)
         dheap->constGrowthRate = constGrowthRate;
 }
 
+/**
+ * Resizes to the heap array to the specified size or to the minimum space needed
+ * @param dheap the d-ary heap to modify
+ * @param size new size of the array, if less than minimum needed: the minimum size will be used
+ * @note call with size=0 to shrink the d-ary heap to the minimum size needed
+ */
 void bl_dheap_trimToSize(bl_dheap *dheap, size_t size)
 {
     if(dheap->heapSize > size) {
@@ -221,15 +292,27 @@ void bl_dheap_trimToSize(bl_dheap *dheap, size_t size)
     dheap->arraySize = size;
 }
 
+/**
+ * frees the d-ary heap
+ * @param dheap the d-ary heap to free
+ */
 void bl_dheap_free(bl_dheap *dheap)
 {
     if(dheap->arr)
         free(dheap->arr);
     free(dheap);
-
 }
 
-// dheap operations
+//// dheap operations ////
+
+/**
+ * creates a new d-ary heap
+ * @param initSize initial size of the array containing the heap
+ # @param dNum number of children per element (Ex: 2-binary, 3-ternary, etc...)
+ * @param cmp_func() the function used to compare elements of the heap
+ * @note the cmp_func() determines if it is a min or max heap
+ * @return the newly created d-ary heap
+ */
 bl_dheap *bl_dheap_new(size_t initSize, unsigned dNum, int (*cmp_func)(const void *, const void *))
 {
     if(dNum == 0) {
@@ -248,6 +331,13 @@ bl_dheap *bl_dheap_new(size_t initSize, unsigned dNum, int (*cmp_func)(const voi
     return dheap;
 }
 
+/**
+ * add an element to the d-ary heap
+ * @param dheap the d-ary heap to add to
+ * @param data pointer to the data that will be added
+ * @note data will be compared using cmp_func()
+ * @see bl_dheap_new()
+ */
 void bl_dheap_push(bl_dheap *dheap, void * const data)
 {
     dheap->heapSize++;
@@ -266,6 +356,11 @@ void bl_dheap_push(bl_dheap *dheap, void * const data)
     dsift_up(dheap, index);
 }
 
+/**
+ * peek at the max/min element of the d-ary heap
+ * @param dheap the d-ary heap
+ * @return pointer to the data of the min/max element
+ */
 void *bl_dheap_peek(bl_dheap *dheap)
 {
     if(dheap->heapSize > 0)
@@ -274,6 +369,11 @@ void *bl_dheap_peek(bl_dheap *dheap)
         return NULL;
 }
 
+/**
+ * removes the min/max element of the d-ary heap
+ * @param dheap the d-ary heap to pop from
+ * @return pointer to the data of the popped element
+ */
 void *bl_dheap_pop(bl_dheap *dheap)
 {
     void *retVal = NULL;
@@ -288,6 +388,11 @@ void *bl_dheap_pop(bl_dheap *dheap)
     return retVal;
 }
 
+/**
+ * ensures the index element is correct going towards the root, sifts up in a way
+ * @param dheap the d-ary heap
+ * @param index index of the element to sift up
+ */
 void dsift_up(bl_dheap *dheap, size_t index)
 {
     size_t parent;
@@ -306,6 +411,11 @@ void dsift_up(bl_dheap *dheap, size_t index)
     }
 }
 
+/**
+ * ensures the index element is correct going towards the leaves, sifts down in a way
+ * @param dheap the d-ary heap
+ * @param index index of the element to be sifted down
+ */
 void dsift_down(bl_dheap *dheap, size_t index)
 {
     size_t curChild;
