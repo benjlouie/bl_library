@@ -1,6 +1,9 @@
 /* Heap functions */
 /*////////////////*/
 #pragma once
+#ifndef BL_HEAP_H
+#define BL_HEAP_H
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,3 +36,4 @@ void bl_dheap_push(bl_dheap *dheap, void * const data);
 void *bl_dheap_peek(bl_dheap *dheap);
 void *bl_dheap_pop(bl_dheap *dheap);
 
+#endif

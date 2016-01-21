@@ -13,22 +13,30 @@ struct bl_hashtable_t {
     } **table;
 };
 
-// TODO: add delete function to remove all elms and the hash
-
-uint64_t bl_hash64(unsigned char *x, size_t length);
+uint64_t bl_hash64(char *x, size_t length);
 bl_hashtable *bl_hashtable_new(size_t tableSize);
-void bl_hashtable_put(bl_hashtable *ht, char *key, void *data);
+void bl_hashtable_insert(bl_hashtable *ht, char *key, void *data);
 void *bl_hashtable_get(bl_hashtable *ht, char *key);
 void *bl_hashtable_remove(bl_hashtable *ht, char *key);
 size_t bl_hashtable_count(bl_hashtable *ht);
 void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData);
+void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
+void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
+void bl_hashtable_free(bl_hashtable *ht);
+
 void elm_free(struct bl_hashtable_elm *elm);
 
 
 // 64-bit Pearson hash (From wikipedia)
-uint64_t bl_hash64(unsigned char *x, size_t length)
+/**
+ * creates a 64-bit number of the hashed input
+ * @param x the data to hash
+ * @param length the length of the data in bytes
+ * @return 64-bit integer
+ */
+uint64_t bl_hash64(char *x, size_t length)
 {
-    int i, j;
+    size_t i, j;
     unsigned char final[8];
     unsigned char T[256] = // 0-255 shuffled randomly
         {45,  21,  91, 191, 148, 128,   9,  49, 162, 228, 137,  55,  19, 136, 112, 210,
@@ -49,9 +57,9 @@ uint64_t bl_hash64(unsigned char *x, size_t length)
         175,  10, 118, 251,  11, 202, 252, 147, 165, 164,  98,  53,  72,  42, 157, 203};
     
     for(j = 0; j < 8; j++) {
-        unsigned char h = T[(x[0] + j) % 256];
+        unsigned char h = T[((unsigned char)x[0] + j) % 256];
         for(i = 1; i < length; i++) {
-            h = T[h ^ x[i]];
+            h = T[h ^ (unsigned char)x[i]];
         }
         final[j] = h;
     }
@@ -59,15 +67,27 @@ uint64_t bl_hash64(unsigned char *x, size_t length)
     return *(uint64_t *)final;
 }
 
+/**
+ * creates a new hash table (chained hash) of the specified size
+ * @param tableSize the size of the hash table
+ * @return the new hashtable
+ */
 bl_hashtable *bl_hashtable_new(size_t tableSize)
 {
     bl_hashtable *ht = malloc(sizeof(bl_hashtable));
     ht->tableSize = tableSize;
     ht->count = 0;
     ht->table = calloc(tableSize, sizeof(struct bl_hashtable_elm *));
+    return ht;
 }
 
-void bl_hashtable_put(bl_hashtable *ht, char *key, void *data)
+/**
+ * insets a new key value pair in to the hash table
+ * @param ht the hash table to insert into
+ * @param key the key for the new element (must be a null terminated string)
+ * @param data the data to insert with the key
+ */
+void bl_hashtable_insert(bl_hashtable *ht, char *key, void *data)
 {
     // malloc mem for elm
     struct bl_hashtable_elm *elm = malloc(sizeof(struct bl_hashtable_elm));
@@ -85,6 +105,12 @@ void bl_hashtable_put(bl_hashtable *ht, char *key, void *data)
     ht->count++;
 }
 
+/**
+ * gets the data at the specified key value (first found)
+ * @param ht the hash table to look in
+ * @param key the key value to find (must be a null terminated string)
+ * @return the data found with the specified key value, NULL if not found
+ */
 void *bl_hashtable_get(bl_hashtable *ht, char *key)
 {
     uint64_t index = bl_hash64(key, strlen(key));
@@ -104,6 +130,12 @@ void *bl_hashtable_get(bl_hashtable *ht, char *key)
     }
 }
 
+/**
+ * removes the first key value pair found specified by key
+ * @param ht the hash table to remove from
+ * @param key the key to look for (must be a null terminated string)
+ * @return data ptr from the removed elm, NULL if the elm was not found
+ */
 void *bl_hashtable_remove(bl_hashtable *ht, char *key)
 {
     uint64_t index = bl_hash64(key, strlen(key));
@@ -133,14 +165,33 @@ void *bl_hashtable_remove(bl_hashtable *ht, char *key)
     return data;
 }
 
+/**
+ * gives the number of key value pairs in the table
+ * @param ht the hash table
+ * @return the number of elms in the table
+ */
 size_t bl_hashtable_count(bl_hashtable *ht)
 {
     return ht->count;
 }
 
 /**
- * returns ptr to old data, if new elm was created returns newData ptr
- * */
+ * gives the size of the hash table
+ * @param ht the hash table
+ * @return the table size
+ */
+size_t bl_hashtable_tablesize(bl_hashtable *ht)
+{
+    return ht->tableSize;
+}
+
+/**
+ * modifies the data of the first found elm with a matching key, adds a new key value pair if not found
+ * @param ht the hash table
+ * @param key the key to look for (must be a null terminated string)
+ * @param newData the new data to replace the old with (or insert)
+ * @return ptr to the old data if it was replaced, ptr to newData if a new elm was inserted
+ */
 void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData)
 {
     uint64_t index = bl_hash64(key, strlen(key));
@@ -169,6 +220,73 @@ void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData)
     return data;
 }
 
+/**
+ * runs the function on every elm of the hash table, calls func with the specified userData and each element's key and data
+ * @param ht the hash table
+ * @param userData the data that is sent with each key value pair to func()
+ * @param func() function that is called on each elm of the table, sent that elements key and data along with the provided userData
+ * @note func() should not free() or modify the key passed to it
+ */
+void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData))
+{
+    for(int i = 0; i < ht->tableSize; i++) {
+        struct bl_hashtable_elm *elm = ht->table[i];
+        while(elm) {
+            if(func) {
+                func(elm->key, elm->data, userData);
+            }
+            elm = elm->next;
+        }
+    }
+}
+
+/**
+ * runs the function on every elm of the hash table and removes every elm, calls func with the specified userData and each element's key and data
+ * @param ht the hash table
+ * @param userData the data that is sent with each key value pair to func()
+ * @param func() function that is called on each elm of the table, sent that elements key and data along with the provided userData
+ * @note func() should not free() or modify the key passed to it
+ */
+void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData))
+{
+    for(size_t i = 0; i < ht->tableSize; i++) {
+        struct bl_hashtable_elm *elm = ht->table[i];
+        while(elm) {
+            struct bl_hashtable_elm *prev = elm;
+            if(func) {
+                func(elm->key, elm->data, userData);
+            }
+            elm = elm->next;
+            free(prev->key);
+            free(prev);
+            ht->count--;
+        }
+        ht->table[i] = NULL;
+    }
+}
+
+/**
+ * frees all hash table resources, does not touch data that was inserted
+ * @param ht the hash table to free
+ */
+void bl_hashtable_free(bl_hashtable *ht)
+{
+    for(size_t i = 0; i < ht->tableSize; i++) {
+        struct bl_hashtable_elm *elm = ht->table[i];
+        while(elm) {
+            struct bl_hashtable_elm *prev = elm;
+            elm = elm->next;
+            elm_free(prev);
+        }
+    }
+    free(ht->table);
+    free(ht);
+}
+
+/**
+ * frees an element of the hash table
+ * @param elm the elm to free
+ */
 void elm_free(struct bl_hashtable_elm *elm)
 {
     free(elm->key); // should always be something
@@ -188,3 +306,4 @@ void printTable(bl_hashtable *ht)
         printf("\n");
     }
 }
+

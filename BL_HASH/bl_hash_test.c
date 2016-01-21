@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "bl_hash.h"
 
+void plus(char *key, void *data, void *user_data);
 
 int main(void)
 {
@@ -14,7 +15,7 @@ int main(void)
     bl_hashtable *ht = bl_hashtable_new(10);
     
     for(int i = 0; i < arr_size; i++) {
-        bl_hashtable_put(ht, strings[i], &arr[i]);
+        bl_hashtable_insert(ht, strings[i], &arr[i]);
     }
     printTable(ht);
     printf("count = %lu\n", bl_hashtable_count(ht));
@@ -30,7 +31,21 @@ int main(void)
     // return ptr to old data
     printf("changed data = %d\n", *(int *)bl_hashtable_modify(ht, strings[6], &newInt));
     // had to create new elm, returned ptr to new data
-    printf("modified 'new' data = %d\n", *(int *)bl_hashtable_modify(ht, "newString", &newInt2));
+    printf("'modified' new data = %d\n", *(int *)bl_hashtable_modify(ht, "newString", &newInt2));
+    
+    printf("\n");
+    printTable(ht);
+    printf("count = %lu\n", bl_hashtable_count(ht));
+    
+    int user_int = 5;
+    bl_hashtable_foreach(ht, &user_int, (plus));
+    
+    printf("\n");
+    printTable(ht);
+    printf("count = %lu\n", bl_hashtable_count(ht));
+    
+    bl_hashtable_foreach_remove(ht, NULL, NULL);
+    //bl_hashtable_free(ht); // gets rid of the hash entirely
     
     printf("\n");
     printTable(ht);
@@ -38,3 +53,9 @@ int main(void)
     
     return 0;
 }
+
+void plus(char *key, void *data, void *user_data)
+{
+    (*(int *)data) += *(int *)user_data;
+}
+
