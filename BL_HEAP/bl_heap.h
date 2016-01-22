@@ -21,6 +21,9 @@ void bl_heap_free(bl_heap *heap);
 void bl_heap_push(bl_heap *heap, void * const data);
 void *bl_heap_peek(bl_heap *heap);
 void *bl_heap_pop(bl_heap *heap);
+void bl_heap_foreach(bl_heap *heap, void *userData, void (*func)(void *data, void *userData));
+void bl_heap_foreach_remove(bl_heap *heap, void *userData, void (*func)(void *data, void *userData));
+void bl_heap_heapify(bl_heap *heap);
 
 
 typedef struct bl_dheap_t bl_dheap;
@@ -35,5 +38,8 @@ void bl_dheap_free(bl_dheap *dheap);
 void bl_dheap_push(bl_dheap *dheap, void * const data);
 void *bl_dheap_peek(bl_dheap *dheap);
 void *bl_dheap_pop(bl_dheap *dheap);
+void bl_dheap_foreach(bl_dheap *dheap, void *userData, void (*func)(void *data, void *userData));
+void bl_dheap_foreach_remove(bl_dheap *dheap, void *userData, void (*func)(void *data, void *userData));
+void bl_dheap_heapify(bl_dheap *dheap);
 
 #endif

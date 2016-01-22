@@ -24,6 +24,9 @@ void bl_heap_free(bl_heap *heap);
 void bl_heap_push(bl_heap *heap, void * const data);
 void *bl_heap_peek(bl_heap *heap);
 void *bl_heap_pop(bl_heap *heap);
+void bl_heap_foreach(bl_heap *heap, void *userData, void (*func)(void *data, void *userData));
+void bl_heap_foreach_remove(bl_heap *heap, void *userData, void (*func)(void *data, void *userData));
+void bl_heap_heapify(bl_heap *heap);
 void sift_up(bl_heap *heap, size_t index);
 void sift_down(bl_heap *heap, size_t index);
 
@@ -49,6 +52,9 @@ void bl_dheap_free(bl_dheap *dheap);
 void bl_dheap_push(bl_dheap *dheap, void * const data);
 void *bl_dheap_peek(bl_dheap *dheap);
 void *bl_dheap_pop(bl_dheap *dheap);
+void bl_dheap_foreach(bl_dheap *dheap, void *userData, void (*func)(void *data, void *userData));
+void bl_dheap_foreach_remove(bl_dheap *dheap, void *userData, void (*func)(void *data, void *userData));
+void bl_dheap_heapify(bl_dheap *dheap);
 void dsift_up(bl_dheap *dheap, size_t index);
 void dsift_down(bl_dheap *dheap, size_t index);
 
@@ -183,6 +189,48 @@ void *bl_heap_pop(bl_heap *heap)
     }
     
     return retVal;
+}
+
+/**
+ * runs the given function on every element of the heap
+ * @param heap the heap
+ * @param userData extra data to pass to the function
+ * @param func the function called on each element, passed the elm data and the given userData
+ * @note if func() changes the heap data, then the heap property is not guaranteed to be maintained
+ * @see bl_heap_heapify()
+ */
+void bl_heap_foreach(bl_heap *heap, void *userData, void (*func)(void *data, void *userData))
+{
+    if(func) {
+        for(size_t i = 0; i < heap->heapSize; i++) {
+            func(heap->arr[i], userData);
+        }
+    }
+}
+
+/**
+ * runs the function on every element of the heap and removes them all from the heap
+ * @param heap the heap
+ * @param userData extra data to pass to the function
+ * @param func the function called on each element, passed the elm data and the given userData
+ */
+void bl_heap_foreach_remove(bl_heap *heap, void *userData, void (*func)(void *data, void *userData))
+{
+    bl_heap_foreach(heap, userData, func);
+    heap->heapSize = 0;
+}
+
+/**
+ * ensures the given heap maintains the heap property
+ * @param heap the heap to heapify
+ * @note see bl_heap_foreach()
+ */
+void bl_heap_heapify(bl_heap *heap)
+{
+    for(size_t i = (heap->heapSize - 2) / 2; i > 0; i--) {
+        sift_down(heap, i);
+    }
+    sift_down(heap, 0);
 }
 
 /**
@@ -389,6 +437,48 @@ void *bl_dheap_pop(bl_dheap *dheap)
 }
 
 /**
+ * runs the given function on every element of the d-ary heap
+ * @param dheap the d-ary heap
+ * @param userData extra data to pass to the function
+ * @param func the function called on each element, passed the elm data and the given userData
+ * @note if func() changes the heap data, then the heap property is not guaranteed to be maintained
+ * @see bl_dheap_heapify()
+ */
+void bl_dheap_foreach(bl_dheap *dheap, void *userData, void (*func)(void *data, void *userData))
+{
+    if(func) {
+        for(size_t i = 0; i < dheap->heapSize; i++) {
+            func(dheap->arr[i], userData);
+        }
+    }
+}
+
+/**
+ * runs the given function on every element of the d-ary heap and removes them all from the d-ary heap
+ * @param dheap the d-ary heap
+ * @param userData extra data to pass to the function
+ * @param func the function called on each element, passed the elm data and the given userData
+ */
+void bl_dheap_foreach_remove(bl_dheap *dheap, void *userData, void (*func)(void *data, void *userData))
+{
+    bl_dheap_foreach(dheap, userData, func);
+    dheap->heapSize = 0;
+}
+
+/**
+ * ensures the given d-ary heap maintains the heap property
+ * @param dheap the d-ary heap to heapify
+ * @note see bl_dheap_foreach()
+ */
+void bl_dheap_heapify(bl_dheap *dheap)
+{
+    for(size_t i = (dheap->heapSize - 2) / dheap->dNum; i > 0; i--) {
+        dsift_down(dheap, i);
+    }
+    dsift_down(dheap, 0);
+}
+
+/**
  * ensures the index element is correct going towards the root, sifts up in a way
  * @param dheap the d-ary heap
  * @param index index of the element to sift up
@@ -425,8 +515,9 @@ void dsift_down(bl_dheap *dheap, size_t index)
     while(index < dheap->heapSize)
     {
         maxChild = index * dheap->dNum + 1;
-        if(maxChild > dheap->heapSize)
+        if(maxChild > (dheap->heapSize - 1)) {
             break;
+        }
         maxIndex = index * dheap->dNum + dheap->dNum + 1; // +1 to work with next for-loop
         if(maxIndex > dheap->heapSize)
             maxIndex = dheap->heapSize;
