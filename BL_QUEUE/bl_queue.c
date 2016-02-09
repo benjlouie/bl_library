@@ -16,7 +16,7 @@ struct bl_queue_t {
 bl_queue *bl_queue_new(void);
 void bl_queue_enqueue(bl_queue *queue, void *data);
 void *bl_queue_dequeue(bl_queue *queue);
-void *bl_queue_peak(bl_queue *queue);
+void *bl_queue_peek(bl_queue *queue);
 void *bl_queue_delete(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data));
 void *bl_queue_modify(bl_queue *queue, void *data, void *newData, int (*cmp_func)(const void *elmData, const void *newData));
 void bl_queue_foreach(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
@@ -43,15 +43,13 @@ bl_queue *bl_queue_new(void)
 void bl_queue_enqueue(bl_queue *queue, void *data)
 {
     struct bl_queue_elm *elm = malloc(sizeof(struct bl_queue_elm));
-    elm->data = data;
-    elm->prev = NULL;
     if(queue->size == 0) { // queue is empty
         *elm = (struct bl_queue_elm){data, NULL, NULL};
         queue->head = elm;
         queue->tail = elm;
     } else {
+        *elm = (struct bl_queue_elm){data, NULL, queue->head};
         queue->head->prev = elm;
-        elm->next = queue->head;
         queue->head = elm;
     }
     queue->size++;
@@ -88,7 +86,7 @@ void *bl_queue_dequeue(bl_queue *queue)
  * @param queue the queue
  * @return the data in the next queue element
  */
-void *bl_queue_peak(bl_queue *queue)
+void *bl_queue_peek(bl_queue *queue)
 {
     if(queue->size == 0) {
         return NULL;
@@ -97,7 +95,7 @@ void *bl_queue_peak(bl_queue *queue)
 }
 
 /**
- * deletes the specifies element from the queue
+ * deletes the specified element from the queue
  * @param queue the queue
  * @param data to compare each element with
  * @param cmp_func() compares each element with the given data, should return 0 when elmData and data are equivalent
@@ -181,7 +179,7 @@ void bl_queue_foreach(bl_queue *queue, void *userData, void (*func)(void *data, 
 }
 
 /**
- * rens the provided function on every element of the queue and deletes all elements in the queue
+ * runs the provided function on every element of the queue and deletes all elements in the queue
  * @param queue the queue
  * @param userData extra data to send the function
  * @param func() function called on every elm of the queue, sent the elm data and the provided userData

@@ -33,7 +33,7 @@ int main(void)
     /*
     bl_queue_dequeue(q);
     bl_queue_dequeue(q);
-    num = *(int *)bl_queue_peak(q);
+    num = *(int *)bl_queue_peek(q);
     printf("\n num = %d", num);
     */
     /*
