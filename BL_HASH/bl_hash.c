@@ -24,8 +24,6 @@ void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *k
 void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
 void bl_hashtable_free(bl_hashtable *ht);
 
-void elm_free(struct bl_hashtable_elm *elm);
-
 
 // 64-bit Pearson hash (From wikipedia)
 /**
@@ -159,7 +157,8 @@ void *bl_hashtable_remove(bl_hashtable *ht, char *key)
             ht->table[index] = elm->next;
         }
         data = elm->data;
-        elm_free(elm);
+        free(elm->key); // free elm
+        free(elm);
         ht->count--;
     }
     return data;
@@ -259,10 +258,10 @@ void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(
             elm = elm->next;
             free(prev->key);
             free(prev);
-            ht->count--;
         }
         ht->table[i] = NULL;
     }
+    ht->count = 0;
 }
 
 /**
@@ -271,26 +270,9 @@ void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(
  */
 void bl_hashtable_free(bl_hashtable *ht)
 {
-    for(size_t i = 0; i < ht->tableSize; i++) {
-        struct bl_hashtable_elm *elm = ht->table[i];
-        while(elm) {
-            struct bl_hashtable_elm *prev = elm;
-            elm = elm->next;
-            elm_free(prev);
-        }
-    }
+    bl_hashtable_foreach_remove(ht, NULL, NULL);
     free(ht->table);
     free(ht);
-}
-
-/**
- * frees an element of the hash table
- * @param elm the elm to free
- */
-void elm_free(struct bl_hashtable_elm *elm)
-{
-    free(elm->key); // should always be something
-    free(elm);
 }
 
 // TODO: delete this function
