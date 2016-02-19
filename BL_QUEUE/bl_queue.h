@@ -14,10 +14,11 @@ bl_queue *bl_queue_new(void);
 void bl_queue_enqueue(bl_queue *queue, void *data);
 void *bl_queue_dequeue(bl_queue *queue);
 void *bl_queue_peek(bl_queue *queue);
-void *bl_queue_delete(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data));
+void *bl_queue_remove(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data));
 void *bl_queue_modify(bl_queue *queue, void *data, void *newData, int (*cmp_func)(const void *elmData, const void *newData));
 void bl_queue_foreach(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
-void bl_queue_foreach_delete(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
+void bl_queue_foreach_remove(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
+void bl_queue_free(bl_queue *queue);
 size_t bl_queue_size(bl_queue *queue);
 
 #endif

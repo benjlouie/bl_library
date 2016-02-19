@@ -50,12 +50,13 @@ int main(void)
     int oldData= *(int *)bl_queue_modify(q, &num, &newData, (icmp));
     printf("\noldData = %d", oldData);
     printf("\nnow deleting...");
-    bl_queue_foreach_delete(q, &newData, (print));
+    bl_queue_foreach_remove(q, &newData, (print));
     
     printf("\nsize = %lu", bl_queue_size(q));
     printf("\n");
     bl_queue_foreach(q, NULL, (print));
 
+    bl_queue_free(q);
     return 0;
 }
 

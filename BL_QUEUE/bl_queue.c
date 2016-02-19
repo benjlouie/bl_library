@@ -20,7 +20,8 @@ void *bl_queue_peek(bl_queue *queue);
 void *bl_queue_delete(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data));
 void *bl_queue_modify(bl_queue *queue, void *data, void *newData, int (*cmp_func)(const void *elmData, const void *newData));
 void bl_queue_foreach(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
-void bl_queue_foreach_delete(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
+void bl_queue_foreach_remove(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
+void bl_queue_free(bl_queue *queue);
 size_t bl_queue_size(bl_queue *queue);
 
 
@@ -95,13 +96,13 @@ void *bl_queue_peek(bl_queue *queue)
 }
 
 /**
- * deletes the specified element from the queue
+ * removess the specified element from the queue
  * @param queue the queue
  * @param data to compare each element with
  * @param cmp_func() compares each element with the given data, should return 0 when elmData and data are equivalent
- * @return pointer to data from the deleted element, NULL if no element was deleted
+ * @return pointer to data from the removed element, NULL if no element was deleted
  */
-void *bl_queue_delete(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data))
+void *bl_queue_remove(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data))
 {
     struct bl_queue_elm *elm = queue->head;
     void *retData = NULL;
@@ -185,7 +186,7 @@ void bl_queue_foreach(bl_queue *queue, void *userData, void (*func)(void *data, 
  * @param func() function called on every elm of the queue, sent the elm data and the provided userData
  * @note call with func() = NULL to just delete every elm of the queue
  */
-void bl_queue_foreach_delete(bl_queue *queue, void *userData, void (*func)(void *data, void *userData))
+void bl_queue_foreach_remove(bl_queue *queue, void *userData, void (*func)(void *data, void *userData))
 {
     struct bl_queue_elm *elm = queue->head;
     while(elm) {
@@ -197,6 +198,19 @@ void bl_queue_foreach_delete(bl_queue *queue, void *userData, void (*func)(void 
         free(tmp);
     }
     *queue = (bl_queue){0, NULL, NULL};
+}
+
+/**
+ * Frees all queue resources, does not touch the inserted data
+ * @param queue the queue to free
+ * @note to interact with the inserted data (free()?) use the provided foreach functions
+ * @see bl_queue_foreach()
+ * @see bl_queue_foreach_remove()
+ */
+void bl_queue_free(bl_queue *queue)
+{
+    bl_queue_foreach_remove(queue, NULL, NULL);
+    free(queue);
 }
 
 /**
