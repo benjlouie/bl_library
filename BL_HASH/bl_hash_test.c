@@ -44,6 +44,11 @@ int main(void)
     printTable(ht);
     printf("count = %lu\n", bl_hashtable_count(ht));
     
+    printf("\n");
+    bl_hashtable_rehash(ht, 6);
+    printTable(ht);
+    printf("count = %lu\n", bl_hashtable_count(ht));
+    
     bl_hashtable_foreach_remove(ht, NULL, NULL);
     //bl_hashtable_free(ht); // gets rid of the hash entirely
     

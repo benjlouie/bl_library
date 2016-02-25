@@ -19,9 +19,13 @@ void bl_hashtable_insert(bl_hashtable *ht, char *key, void *data);
 void *bl_hashtable_get(bl_hashtable *ht, char *key);
 void *bl_hashtable_remove(bl_hashtable *ht, char *key);
 size_t bl_hashtable_count(bl_hashtable *ht);
+size_t bl_hashtable_tablesize(bl_hashtable *ht);
+float bl_hashtable_loadfactor(bl_hashtable *ht);
 void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData);
 void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
 void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
+void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize);
+void bl_hashtable_rehash_auto(bl_hashtable *ht, float minFactor, float maxFactor);
 void bl_hashtable_free(bl_hashtable *ht);
 
 
@@ -185,6 +189,16 @@ size_t bl_hashtable_tablesize(bl_hashtable *ht)
 }
 
 /**
+ * returns the load factor of the hashtable
+ * @param ht the hash table
+ * @return the load factor
+ */
+float bl_hashtable_loadfactor(bl_hashtable *ht)
+{
+    return (float)ht->count / (float)ht->tableSize;
+}
+
+/**
  * modifies the data of the first found elm with a matching key, adds a new key value pair if not found
  * @param ht the hash table
  * @param key the key to look for (must be a null terminated string)
@@ -262,6 +276,39 @@ void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(
         ht->table[i] = NULL;
     }
     ht->count = 0;
+}
+
+/**
+ * resises the hashtable to the specified size
+ * @param ht the hashtable
+ * @param newTableSize the new size for the hash table
+ * @note do not use with bl_hashtable_rehash_auto(), use one or the other
+ * @see bl_hashtable_rehash_auto()
+ */
+void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize)
+{
+    struct bl_hashtable_elm **newTable = calloc(newTableSize, sizeof(struct bl_hashtable_elm *));
+    for(int i = 0; i < ht->tableSize; i++) {
+        struct bl_hashtable_elm *elm = ht->table[i];
+        struct bl_hashtable_elm *prev = ht->table[i];
+        while(elm) {
+            elm = elm->next;
+            // move old elm to new table
+            size_t newIndex = bl_hash64(prev->key, strlen(prev->key)) % newTableSize;
+            prev->next = newTable[newIndex];
+            newTable[newIndex] = prev;
+            prev = elm;
+        }
+    }
+    free(ht->table);
+    ht->table = newTable;
+    ht->tableSize = newTableSize;
+}
+
+void bl_hashtable_rehash_auto(bl_hashtable *ht, float minFactor, float maxFactor)
+{
+    //TODO: finish this function
+    //TODO: make necessary changes in insert and delete? functions
 }
 
 /**
