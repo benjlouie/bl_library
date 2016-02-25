@@ -282,8 +282,6 @@ void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(
  * resises the hashtable to the specified size
  * @param ht the hashtable
  * @param newTableSize the new size for the hash table
- * @note do not use with bl_hashtable_rehash_auto(), use one or the other
- * @see bl_hashtable_rehash_auto()
  */
 void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize)
 {
@@ -303,12 +301,6 @@ void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize)
     free(ht->table);
     ht->table = newTable;
     ht->tableSize = newTableSize;
-}
-
-void bl_hashtable_rehash_auto(bl_hashtable *ht, float minFactor, float maxFactor)
-{
-    //TODO: finish this function
-    //TODO: make necessary changes in insert and delete? functions
 }
 
 /**
