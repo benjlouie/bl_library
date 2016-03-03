@@ -20,6 +20,8 @@ void bl_heap_set_growthRate(bl_heap *heap, float growthRate);
 void bl_heap_set_constGrowthRate(bl_heap *heap, size_t constGrowthRate);
 void bl_heap_trimToSize(bl_heap *heap, size_t size);
 void bl_heap_free(bl_heap *heap);
+size_t bl_heap_count(bl_heap *heap);
+size_t bl_heap_size(bl_heap *heap);
 // heap operations
 void bl_heap_push(bl_heap *heap, void * const data);
 void *bl_heap_peek(bl_heap *heap);
@@ -48,6 +50,8 @@ void bl_dheap_set_growthRate(bl_dheap *dheap, float growthRate);
 void bl_dheap_set_constGrowthRate(bl_dheap *dheap, size_t constGrowthRate);
 void bl_dheap_trimToSize(bl_dheap *dheap, size_t size);
 void bl_dheap_free(bl_dheap *dheap);
+size_t bl_dheap_count(bl_dheap *dheap);
+size_t bl_dheap_size(bl_dheap *dheap);
 // dheap operations
 void bl_dheap_push(bl_dheap *dheap, void * const data);
 void *bl_dheap_peek(bl_dheap *dheap);
@@ -111,6 +115,26 @@ void bl_heap_free(bl_heap *heap)
     if(heap->arr)
         free(heap->arr);
     free(heap);
+}
+
+/**
+ * gives the number of elements in the heap
+ * @param heap the heap
+ * @return the number of elements in the heap
+ */
+size_t bl_heap_count(bl_heap *heap)
+{
+    return heap->heapSize;
+}
+
+/**
+ * gives the size of the array containing the heap (# of elements)
+ * @param heap the heap
+ * @return size of the array containing the heap
+ */
+size_t bl_heap_size(bl_heap *heap)
+{
+    return heap->arraySize;
 }
 
 //// heap operations ////
@@ -349,6 +373,26 @@ void bl_dheap_free(bl_dheap *dheap)
     if(dheap->arr)
         free(dheap->arr);
     free(dheap);
+}
+
+/**
+ * gives the number of elements in the d-ary heap
+ * @param dheap the d-ary heap
+ * @return the number of elements in the d-ary heap
+ */
+size_t bl_dheap_count(bl_dheap *dheap)
+{
+    return dheap->heapSize;
+}
+
+/**
+ * gives the size of the array containing the d-ary heap (# of elements)
+ * @param dheap the d-ary heap
+ * @return size of the array containing the d-ary heap
+ */
+size_t bl_dheap_size(bl_dheap *dheap)
+{
+    return dheap->arraySize;
 }
 
 //// dheap operations ////
