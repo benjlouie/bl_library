@@ -8,6 +8,7 @@ struct bl_hashtable_t {
     size_t count;
     struct bl_hashtable_elm {
         char *key;
+        size_t keyLength;
         void *data;
         struct bl_hashtable_elm *next;
     } **table;
@@ -15,13 +16,13 @@ struct bl_hashtable_t {
 
 uint64_t bl_hash64(char *x, size_t length);
 bl_hashtable *bl_hashtable_new(size_t tableSize);
-void bl_hashtable_insert(bl_hashtable *ht, char *key, void *data);
-void *bl_hashtable_get(bl_hashtable *ht, char *key);
-void *bl_hashtable_remove(bl_hashtable *ht, char *key);
+void bl_hashtable_insert(bl_hashtable *ht, void *key, size_t keyLength, void *data);
+void *bl_hashtable_get(bl_hashtable *ht, void *key, size_t keyLength);
+void *bl_hashtable_remove(bl_hashtable *ht, void *key, size_t keyLength);
 size_t bl_hashtable_count(bl_hashtable *ht);
 size_t bl_hashtable_tablesize(bl_hashtable *ht);
 float bl_hashtable_loadfactor(bl_hashtable *ht);
-void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData);
+void *bl_hashtable_modify(bl_hashtable *ht, void *key, size_t keyLength, void *newData);
 void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
 void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
 void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize);
@@ -86,19 +87,22 @@ bl_hashtable *bl_hashtable_new(size_t tableSize)
 /**
  * insets a new key value pair in to the hash table
  * @param ht the hash table to insert into
- * @param key the key for the new element (must be a null terminated string)
+ * @param key the key value, will be copied
+ * @param keyLength the length of the key in bytes
  * @param data the data to insert with the key
  */
-void bl_hashtable_insert(bl_hashtable *ht, char *key, void *data)
+void bl_hashtable_insert(bl_hashtable *ht, void *key, size_t keyLength, void *data)
 {
     // malloc mem for elm
     struct bl_hashtable_elm *elm = malloc(sizeof(struct bl_hashtable_elm));
     // use strdup to copy key string
-    elm->key = strdup(key);
+    elm->key = malloc(keyLength);
+    memcpy(elm->key, key, keyLength);
+    elm->keyLength = keyLength;
     elm->data = data;
     
     // conpute hash index from key
-    uint64_t index = bl_hash64(elm->key, strlen(elm->key));
+    uint64_t index = bl_hash64(elm->key, elm->keyLength);
     index %= ht->tableSize;
     
     // insert elm in table
@@ -110,18 +114,21 @@ void bl_hashtable_insert(bl_hashtable *ht, char *key, void *data)
 /**
  * gets the data at the specified key value (first found)
  * @param ht the hash table to look in
- * @param key the key value to find (must be a null terminated string)
+ * @param key the key value
+ * @param keyLength the length of the key in bytes
  * @return the data found with the specified key value, NULL if not found
  */
-void *bl_hashtable_get(bl_hashtable *ht, char *key)
+void *bl_hashtable_get(bl_hashtable *ht, void *key, size_t keyLength)
 {
-    uint64_t index = bl_hash64(key, strlen(key));
+    uint64_t index = bl_hash64(key, keyLength);
     index %= ht->tableSize;
     
     struct bl_hashtable_elm *elm = ht->table[index];
     while(elm) { /* locate matching key */
-        if(strcmp(elm->key, key) == 0) {
-            break;
+        if(elm->keyLength == keyLength) {
+            if(memcmp(elm->key, key, keyLength) == 0) {
+                break;
+            }
         }
         elm = elm->next;
     }
@@ -135,12 +142,13 @@ void *bl_hashtable_get(bl_hashtable *ht, char *key)
 /**
  * removes the first key value pair found specified by key
  * @param ht the hash table to remove from
- * @param key the key to look for (must be a null terminated string)
+ * @param key the key value
+ * @param keyLength the length of the key in bytes
  * @return data ptr from the removed elm, NULL if the elm was not found
  */
-void *bl_hashtable_remove(bl_hashtable *ht, char *key)
+void *bl_hashtable_remove(bl_hashtable *ht, void *key, size_t keyLength)
 {
-    uint64_t index = bl_hash64(key, strlen(key));
+    uint64_t index = bl_hash64(key, keyLength);
     index %= ht->tableSize;
     
     void *data = NULL;
@@ -148,8 +156,10 @@ void *bl_hashtable_remove(bl_hashtable *ht, char *key)
     struct bl_hashtable_elm *prev = NULL;
     
     while(elm) { /* locate matching key */
-        if(strcmp(elm->key, key) == 0) {
-            break;
+        if(elm->keyLength == keyLength) {
+            if(memcmp(elm->key, key, keyLength) == 0) {
+                break;
+            }
         }
         prev = elm;
         elm = elm->next;
@@ -201,20 +211,23 @@ float bl_hashtable_loadfactor(bl_hashtable *ht)
 /**
  * modifies the data of the first found elm with a matching key, adds a new key value pair if not found
  * @param ht the hash table
- * @param key the key to look for (must be a null terminated string)
+ * @param key the key value
+ * @param keyLength the length of the key in bytes
  * @param newData the new data to replace the old with (or insert)
  * @return ptr to the old data if it was replaced, ptr to newData if a new elm was inserted
  */
-void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData)
+void *bl_hashtable_modify(bl_hashtable *ht, void *key, size_t keyLength, void *newData)
 {
-    uint64_t index = bl_hash64(key, strlen(key));
+    uint64_t index = bl_hash64(key, keyLength);
     index %= ht->tableSize;
     
     void *data; // old data (or newData if elm is created)
     struct bl_hashtable_elm *elm = ht->table[index];
     while(elm) {
-        if(strcmp(elm->key, key) == 0) {
-            break;
+        if(elm->keyLength == keyLength) {
+            if(memcmp(elm->key, key, keyLength) == 0) {
+                break;
+            }
         }
         elm = elm->next;
     }
@@ -224,7 +237,9 @@ void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData)
     } else { // no such elm, add new elm to table
         data = newData;
         elm = malloc(sizeof(struct bl_hashtable_elm));
-        elm->key = strdup(key);
+        elm->key = malloc(keyLength);
+        memcpy(elm->key, key, keyLength);
+        elm->keyLength = keyLength;
         elm->data = newData;
         elm->next = ht->table[index];
         ht->table[index] = elm;
@@ -242,13 +257,13 @@ void *bl_hashtable_modify(bl_hashtable *ht, char *key, void *newData)
  */
 void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData))
 {
-    for(int i = 0; i < ht->tableSize; i++) {
-        struct bl_hashtable_elm *elm = ht->table[i];
-        while(elm) {
-            if(func) {
+    if(func) {
+        for(int i = 0; i < ht->tableSize; i++) {
+            struct bl_hashtable_elm *elm = ht->table[i];
+            while(elm) {
                 func(elm->key, elm->data, userData);
+                elm = elm->next;
             }
-            elm = elm->next;
         }
     }
 }
@@ -292,7 +307,7 @@ void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize)
         while(elm) {
             elm = elm->next;
             // move old elm to new table
-            size_t newIndex = bl_hash64(prev->key, strlen(prev->key)) % newTableSize;
+            size_t newIndex = bl_hash64(prev->key, prev->keyLength) % newTableSize;
             prev->next = newTable[newIndex];
             newTable[newIndex] = prev;
             prev = elm;

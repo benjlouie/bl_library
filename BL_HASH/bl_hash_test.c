@@ -15,23 +15,23 @@ int main(void)
     bl_hashtable *ht = bl_hashtable_new(10);
     
     for(int i = 0; i < arr_size; i++) {
-        bl_hashtable_insert(ht, strings[i], &arr[i]);
+        bl_hashtable_insert(ht, strings[i], strlen(strings[i]) + 1, &arr[i]);
     }
     printTable(ht);
     printf("count = %lu\n", bl_hashtable_count(ht));
     /*
-    bl_hashtable_remove(ht, strings[0]);
-    bl_hashtable_remove(ht, strings[6]);
-    bl_hashtable_remove(ht, strings[9]);
-    bl_hashtable_remove(ht, strings[5]);
+    bl_hashtable_remove(ht, strings[0], strlen(strings[0]) + 1);
+    bl_hashtable_remove(ht, strings[6], strlen(strings[6]) + 1);
+    bl_hashtable_remove(ht, strings[9], strlen(strings[9]) + 1);
+    bl_hashtable_remove(ht, strings[5], strlen(strings[5]) + 1);
     */
     
     int newInt = 60;
     int newInt2 = 78;
     // return ptr to old data
-    printf("changed data = %d\n", *(int *)bl_hashtable_modify(ht, strings[6], &newInt));
+    printf("changed data = %d\n", *(int *)bl_hashtable_modify(ht, strings[6], strlen(strings[6]) + 1, &newInt));
     // had to create new elm, returned ptr to new data
-    printf("'modified' new data = %d\n", *(int *)bl_hashtable_modify(ht, "newString", &newInt2));
+    printf("'modified' new data = %d\n", *(int *)bl_hashtable_modify(ht, "newString", strlen("newString") + 1, &newInt2));
     
     printf("\n");
     printTable(ht);
