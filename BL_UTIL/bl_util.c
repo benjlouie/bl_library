@@ -248,6 +248,39 @@ void bl_util_char_replace(char *str, size_t size, char oldc, char newc)
     }
 }
 
-
+/**
+ * finds the key value in the given array, uses binary search
+ * @param key ptr to value to find
+ * @param sortedArr the arr, must be sorted to work
+ * @param size the number of elements in the array
+ * @param var_size the size of each element in bytes
+ * @param cmp_func function that returns <0, 0, >0 if var1 is <, =, > var2
+ * @return pointer to found element, NULL if not found
+ */
+void *bl_util_bsearch(void *key, void *sortedArr, size_t size, size_t var_size, int (cmp_func)(const void *, const void *))
+{
+    char *arr = (char *)sortedArr;
+    size_t low, high, mid;
+    int cmpVal = 0;
+    void *retVal = NULL;
+    
+    low = 0;
+    high = size;
+    
+    while(low < high) {
+        mid = low + ((high - low) / 2); //(low + high) / 2;
+        printf("low = %d, high = %d\n", low, high);
+        cmpVal = cmp_func(key, arr + (mid * var_size));
+        if(cmpVal < 0) { // go down
+            high = mid;
+        } else if(cmpVal > 0) { // go up
+            low = mid + 1;
+        } else { // found elm
+            retVal = arr + (mid * var_size);
+            break;
+        }
+    }
+    return retVal;
+}
 
 

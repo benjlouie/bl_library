@@ -16,5 +16,6 @@ void bl_util_arr_set(void *base, size_t size, size_t var_size, unsigned elips_ar
 void *bl_util_qselect(void *arr, size_t nterm, size_t size, size_t var_size, int (*cmp_func)(const void *, const void *));
 void bl_util_partition(void *arr, void *pivot, size_t size, size_t var_size, int (cmp_func)(const void *, const void *));
 void bl_util_char_replace(char *str, size_t size, char oldc, char newc);
+void *bl_util_bsearch(void *key, void *sortedArr, size_t size, size_t var_size, int (cmp_func)(const void *, const void *));
 
 #endif
