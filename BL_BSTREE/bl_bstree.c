@@ -16,15 +16,16 @@ struct bl_bstree_t {
 
 bl_bstree *bl_bstree_new(int (*cmp_func)(const void *, const void *));
 void bl_bstree_insert(bl_bstree *bstree, void *data);
-void *bl_bstree_delete(bl_bstree *bstree, void *data);
+void *bl_bstree_remove(bl_bstree *bstree, void *data);
 struct bl_bstree_elm *pop_successor(struct bl_bstree_elm *elm);
 struct bl_bstree_elm *pop_predecessor(struct bl_bstree_elm *elm);
 void *bl_bstree_find(bl_bstree *bstree, void *data);
-
-void bl_bstree_print(bl_bstree *bstree);
-void bl_bstree_print_inorder(struct bl_bstree_elm *elm);
-void bl_bstree_print_preorder(struct bl_bstree_elm *elm);
-void bl_bstree_print_postorder(struct bl_bstree_elm *elm);
+void bl_bstree_foreach_inorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
+void bl_bstree_foreach_preorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
+void bl_bstree_foreach_postorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
+void foreach_inorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
+void foreach_preorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
+void foreach_postorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
 
 
 bl_bstree *bl_bstree_new(int (*cmp_func)(const void *, const void *))
@@ -40,6 +41,7 @@ void bl_bstree_insert(bl_bstree *bstree, void *data)
 {
     struct bl_bstree_elm *elm = malloc(sizeof(struct bl_bstree_elm));
     *elm = (struct bl_bstree_elm){data, NULL, NULL};
+    bstree->size++;
     if(!bstree->head) {
         // add as new head
         bstree->head = elm;
@@ -67,7 +69,7 @@ void bl_bstree_insert(bl_bstree *bstree, void *data)
     }
 }
 
-void *bl_bstree_delete(bl_bstree *bstree, void *data)
+void *bl_bstree_remove(bl_bstree *bstree, void *data)
 {
     struct bl_bstree_elm *cur = bstree->head;
     struct bl_bstree_elm **prev = NULL;
@@ -107,6 +109,7 @@ void *bl_bstree_delete(bl_bstree *bstree, void *data)
                     bstree->head = NULL;
                 }
             }
+            bstree->size--;
             break;
         }
     }
@@ -172,39 +175,51 @@ void *bl_bstree_find(bl_bstree *bstree, void *data)
     }
 }
 
-
-//TODO: remove debug print funciton, replace with foreach_inorder/preorder/postorder function
-void bl_bstree_print(bl_bstree *bstree)
+void bl_bstree_foreach_inorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData))
 {
-    bl_bstree_print_inorder(bstree->head);
-    printf("\n");
-    bl_bstree_print_preorder(bstree->head);
-    printf("\n");
-    bl_bstree_print_postorder(bstree->head);
-    printf("\n");
+    if(func) {
+        foreach_inorder(bstree->head, extraData, func);
+    }
 }
 
-void bl_bstree_print_inorder(struct bl_bstree_elm *elm)
+void bl_bstree_foreach_preorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData))
 {
-    if(elm) {
-        bl_bstree_print_inorder(elm->left);
-        printf("%d, ", *(int *)elm->data);
-        bl_bstree_print_inorder(elm->right);
+    if(func) {
+        foreach_preorder(bstree->head, extraData, func);
     }
 }
-void bl_bstree_print_preorder(struct bl_bstree_elm *elm)
+
+void bl_bstree_foreach_postorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData))
 {
-    if(elm) {
-        printf("%d, ", *(int *)elm->data);
-        bl_bstree_print_preorder(elm->left);
-        bl_bstree_print_preorder(elm->right);
+    if(func) {
+        foreach_postorder(bstree->head, extraData, func);
     }
 }
-void bl_bstree_print_postorder(struct bl_bstree_elm *elm)
+
+void foreach_inorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData))
 {
     if(elm) {
-        bl_bstree_print_postorder(elm->left);
-        bl_bstree_print_postorder(elm->right);
-        printf("%d, ", *(int *)elm->data);
+        foreach_inorder(elm->left, extraData, func);
+        func(elm->data, extraData);
+        foreach_inorder(elm->right, extraData, func);
     }
 }
+
+void foreach_preorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData))
+{
+    if(elm) {
+        func(elm->data, extraData);
+        foreach_preorder(elm->left, extraData, func);
+        foreach_preorder(elm->right, extraData, func);
+    }
+}
+
+void foreach_postorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData))
+{
+    if(elm) {
+        foreach_postorder(elm->left, extraData, func);
+        foreach_postorder(elm->right, extraData, func);
+        func(elm->data, extraData);
+    }
+}
+
