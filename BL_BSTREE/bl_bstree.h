@@ -15,5 +15,8 @@ void *bl_bstree_find(bl_bstree *bstree, void *data);
 void bl_bstree_foreach_inorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
 void bl_bstree_foreach_preorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
 void bl_bstree_foreach_postorder(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
+void bl_bstree_foreach_remove(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
+void bl_bstree_free(bl_bstree *bstree);
+size_t bl_bstree_count(bl_bstree *bstree);
 
 #endif

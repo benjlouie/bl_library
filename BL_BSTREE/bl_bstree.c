@@ -26,6 +26,10 @@ void bl_bstree_foreach_postorder(bl_bstree *bstree, void *extraData, void (*func
 void foreach_inorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
 void foreach_preorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
 void foreach_postorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
+void bl_bstree_foreach_remove(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData));
+void foreach_remove(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData));
+void bl_bstree_free(bl_bstree *bstree);
+size_t bl_bstree_count(bl_bstree *bstree);
 
 
 bl_bstree *bl_bstree_new(int (*cmp_func)(const void *, const void *))
@@ -223,3 +227,33 @@ void foreach_postorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(
     }
 }
 
+void bl_bstree_foreach_remove(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData))
+{
+    foreach_remove(bstree->head, extraData, func);
+    bstree->head = NULL;
+    bstree->size = 0;
+}
+
+void foreach_remove(struct bl_bstree_elm *elm, void *extraData, void (*func)(void *data, void *extraData))
+{
+    // postorder removal
+    if(elm) {
+        foreach_remove(elm->left, extraData, func);
+        foreach_remove(elm->right, extraData, func);
+        if(func) {
+            func(elm->data, extraData);
+        }
+        free(elm);
+    }
+}
+
+void bl_bstree_free(bl_bstree *bstree)
+{
+    foreach_remove(bstree->head, NULL, NULL);
+    free(bstree);
+}
+
+size_t bl_bstree_count(bl_bstree *bstree)
+{
+    return bstree->size;
+}

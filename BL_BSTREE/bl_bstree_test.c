@@ -23,6 +23,17 @@ int main(void)
 	
 	print_tree(tree);
 	
+	bl_bstree_foreach_remove(tree, NULL, NULL);
+	
+	bl_bstree_insert(tree, &arr[4]);
+	bl_bstree_insert(tree, &arr[2]);
+	
+	print_tree(tree);
+	
+	bl_bstree_foreach_remove(tree, NULL, NULL);
+	
+	print_tree(tree);
+	
 	return 0;
 }
 
@@ -39,6 +50,7 @@ void print_tree(bl_bstree *bstree)
     printf("\n");
     bl_bstree_foreach_postorder(bstree, NULL, print_int);
     printf("\n");
+	printf("size = %u\n", (unsigned)bl_bstree_count(bstree));
 }
 
 void print_int(void *data, void *extraData)
