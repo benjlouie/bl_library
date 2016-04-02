@@ -20,6 +20,8 @@ int main(void)
 	
 	bl_bstree_remove(tree, &arr[0]);
 	bl_bstree_remove(tree, &arr[5]);
+	bl_bstree_insert(tree, &arr[4]);
+	bl_bstree_remove(tree, &arr[2]);
 	
 	print_tree(tree);
 	

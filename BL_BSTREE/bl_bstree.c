@@ -65,8 +65,7 @@ void bl_bstree_insert(bl_bstree *bstree, void *data)
 
     struct bl_bstree_elm *cur = bstree->head;
     while(1) {
-        int cmpVal = bstree->cmp_func(data, cur->data);
-        if(cmpVal <= 0) { //go left
+        if(bstree->cmp_func(data, cur->data) <= 0) { //go left
             if(cur->left) {
                 cur = cur->left;
             } else {
@@ -93,7 +92,7 @@ void bl_bstree_insert(bl_bstree *bstree, void *data)
 void *bl_bstree_remove(bl_bstree *bstree, void *data)
 {
     struct bl_bstree_elm *cur = bstree->head;
-    struct bl_bstree_elm **prev = NULL;
+    struct bl_bstree_elm **prev = &bstree->head;
     void *retVal = NULL;
     
     while(cur) {
@@ -107,29 +106,15 @@ void *bl_bstree_remove(bl_bstree *bstree, void *data)
         } else { //found element
             retVal = cur->data;
             struct bl_bstree_elm *replace = NULL;
-            if((replace = pop_successor(cur))) {
+            /* predecessor then successor to try and keep left/right distribution even with insert() */
+            if((replace = pop_predecessor(cur))) {
                 replace->left = cur->left;
                 replace->right = cur->right;
-                if(prev) {
-                    *prev = replace;
-                } else {
-                    bstree->head = replace;
-                }
-            } else if((replace = pop_predecessor(cur))) {
+            } else if((replace = pop_successor(cur))) {
                 replace->left = cur->left;
                 replace->right = cur->right;
-                if(prev) {
-                    *prev = replace;
-                } else {
-                    bstree->head = replace;
-                }
-            } else {
-                if(prev) {
-                    *prev = NULL;
-                } else { //head, no replacement
-                    bstree->head = NULL;
-                }
             }
+            *prev = replace;
             bstree->size--;
             break;
         }
@@ -154,9 +139,7 @@ struct bl_bstree_elm *pop_successor(struct bl_bstree_elm *elm)
             prev = &cur->left;
             cur = cur->left;
         }
-        if(prev) {
-            *prev = cur->right;
-        }
+        *prev = cur->right;
         return cur;
     } else {
         return NULL;
@@ -179,9 +162,7 @@ struct bl_bstree_elm *pop_predecessor(struct bl_bstree_elm *elm)
             prev = &cur->right;
             cur = cur->right;
         }
-        if(prev) {
-            *prev = cur->left;
-        }
+        *prev = cur->left;
         return cur;
     } else {
         return NULL;
@@ -306,6 +287,7 @@ void foreach_postorder(struct bl_bstree_elm *elm, void *extraData, void (*func)(
  * @param bstree the tree
  * @param extraData extra data to send the function
  * @param func performed on each element, sent the element's data and extraData
+ * @note call with (bstree, NULL, NULL) to empty the tree without touching the inserted data
  * @note traverses the tree postorder
  */
 void bl_bstree_foreach_remove(bl_bstree *bstree, void *extraData, void (*func)(void *data, void *extraData))
