@@ -5,7 +5,7 @@ Written in C.
 
 BL_BSTREE
 ---------
-(old)A generic binary search tree library. Currently the delete function is broken.
+A generic binary search tree library. Currently only takes in a single value per element, should probably be replaced with a key,value pair.
 
 BL_COMPARE
 ----------
