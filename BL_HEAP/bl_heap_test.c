@@ -24,26 +24,32 @@ int main(void)
         }
         printf("\n");
 
-        bl_dheap *dheap = bl_dheap_new(10, 4, (int_cmp));
+        //bl_dheap *dheap = bl_dheap_new(10, 4, (int_cmp));
         //bl_dheap_set_growthRate(dheap, 2.6);
         //bl_dheap_set_constGrowthRate(dheap, 11);
+        bl_heap *heap = bl_heap_new(10, int_cmp);
         for(i = 0; i < arr_size; i++) {
-            bl_dheap_push(dheap, &arr[i]);
+            //bl_dheap_push(dheap, &arr[i]);
+            bl_heap_push(heap, &arr[i]);
         }
 
-        bl_dheap_trimToSize(dheap, 0);
+        //bl_dheap_trimToSize(dheap, 0);
+        bl_heap_trimToSize(heap, 0);
 
-        printf("%d\n", *(int *)bl_dheap_peek(dheap));
+        //printf("%d\n", *(int *)bl_dheap_peek(dheap));
+        printf("%d\n", *(int *)bl_heap_peek(heap));
 
         int addNum = 6;
-        bl_dheap_foreach(dheap, &addNum, (add));
+        //bl_dheap_foreach(dheap, &addNum, (add));
+        bl_heap_foreach(heap, &addNum, (add));
         //int randN = 100;
         //bl_dheap_foreach(dheap, &randN, (randNum));
-        bl_dheap_heapify(dheap);
+        //bl_dheap_heapify(dheap);
         //bl_dheap_foreach_remove(dheap, NULL, NULL);
 
         for(i = 0; i < arr_size; i++) {
-            int *tmp = bl_dheap_pop(dheap);
+            //int *tmp = bl_dheap_pop(dheap);
+            int *tmp = bl_heap_pop(heap);
             if(tmp) {
                     printf("%d, ", *tmp);
             } else {
@@ -52,7 +58,8 @@ int main(void)
         }
         printf("\n\n");
 
-        bl_dheap_free(dheap);
+        //bl_dheap_free(dheap);
+        bl_heap_free(heap);
     }
     
     return 0;

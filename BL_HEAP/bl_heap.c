@@ -288,34 +288,33 @@ void sift_up(bl_heap *heap, size_t index)
 void sift_down(bl_heap *heap, size_t index)
 {
     size_t lChild, rChild;
-    size_t maxChild;
+    size_t maxSiftIndex = (heap->heapSize - 2) / 2;
     void *tmp;
     
-    while(index < heap->heapSize)
-    {
+    while(index <= maxSiftIndex) {
         lChild = index * 2 + 1;
         rChild = index * 2 + 2;
         
-        maxChild = lChild;
-        if(lChild < heap->heapSize) {
-            if(rChild < heap->heapSize) {
-                // get max of l/rchild
-                if(heap->cmp_func(heap->arr[rChild], heap->arr[lChild]) > 0) {
-                    maxChild = rChild;
-                }
-            }
-            
-            // compare index to max child and swap
-            if(heap->cmp_func(heap->arr[maxChild], heap->arr[index]) > 0) {
-              tmp = heap->arr[index];
-              heap->arr[index] = heap->arr[maxChild];
-              heap->arr[maxChild] = tmp;
-            } else {
-                break;
-            }
-        }
-        index = maxChild;
-    }
+        if(rChild < heap->heapSize && heap->cmp_func(heap->arr[rChild], heap->arr[lChild]) > 0) {
+        	if(heap->cmp_func(heap->arr[rChild], heap->arr[index]) > 0) {
+        	  tmp = heap->arr[index];
+              heap->arr[index] = heap->arr[rChild];
+              heap->arr[rChild] = tmp;
+              index = rChild;
+			} else {
+				return;
+			}
+		} else {
+			if(heap->cmp_func(heap->arr[lChild], heap->arr[index]) > 0) {
+        	  tmp = heap->arr[index];
+              heap->arr[index] = heap->arr[lChild];
+              heap->arr[lChild] = tmp;
+              index = lChild;
+			} else {
+				return;
+			}
+		}
+	}
 }
 
 

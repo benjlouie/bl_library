@@ -262,25 +262,22 @@ void *bl_util_bsearch(void *key, void *sortedArr, size_t size, size_t var_size, 
     char *arr = (char *)sortedArr;
     size_t low, high, mid;
     int cmpVal = 0;
-    void *retVal = NULL;
     
     low = 0;
     high = size;
     
     while(low < high) {
         mid = low + ((high - low) / 2); //(low + high) / 2;
-        printf("low = %d, high = %d\n", low, high);
         cmpVal = cmp_func(key, arr + (mid * var_size));
         if(cmpVal < 0) { // go down
             high = mid;
         } else if(cmpVal > 0) { // go up
             low = mid + 1;
         } else { // found elm
-            retVal = arr + (mid * var_size);
-            break;
+            return arr + (mid * var_size);
         }
     }
-    return retVal;
+    return NULL;
 }
 
 
