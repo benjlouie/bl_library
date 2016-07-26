@@ -7,7 +7,6 @@ struct bl_queue_t {
     size_t size;
     struct bl_queue_elm {
         void *data;
-        struct bl_queue_elm *prev;
         struct bl_queue_elm *next;
     } *head, *tail;
 };
@@ -17,7 +16,7 @@ bl_queue *bl_queue_new(void);
 void bl_queue_enqueue(bl_queue *queue, void *data);
 void *bl_queue_dequeue(bl_queue *queue);
 void *bl_queue_peek(bl_queue *queue);
-void *bl_queue_delete(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data));
+void *bl_queue_remove(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data));
 void *bl_queue_modify(bl_queue *queue, void *data, void *newData, int (*cmp_func)(const void *elmData, const void *newData));
 void bl_queue_foreach(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
 void bl_queue_foreach_remove(bl_queue *queue, void *userData, void (*func)(void *data, void *userData));
@@ -44,14 +43,13 @@ bl_queue *bl_queue_new(void)
 void bl_queue_enqueue(bl_queue *queue, void *data)
 {
     struct bl_queue_elm *elm = malloc(sizeof(struct bl_queue_elm));
+    *elm = (struct bl_queue_elm){data, NULL};
     if(queue->size == 0) { // queue is empty
-        *elm = (struct bl_queue_elm){data, NULL, NULL};
         queue->head = elm;
         queue->tail = elm;
     } else {
-        *elm = (struct bl_queue_elm){data, NULL, queue->head};
-        queue->head->prev = elm;
-        queue->head = elm;
+        queue->tail->next = elm;
+        queue->tail = elm;
     }
     queue->size++;
 }
@@ -67,17 +65,11 @@ void *bl_queue_dequeue(bl_queue *queue)
         return NULL;
     }
     
-    struct bl_queue_elm *elm = queue->tail;
-    if(elm->prev) { // not head elm
-        queue->tail = elm->prev;
-        queue->tail->next = NULL;
-    } else { // dequeue head elm
-        queue->head = NULL;
-        queue->tail = NULL;
-    }
+    struct bl_queue_elm *elm = queue->head;
+    void *data = elm->data;
+    queue->head = elm->next;
     queue->size--;
     
-    void *data = elm->data;
     free(elm);
     return data;
 }
@@ -92,7 +84,7 @@ void *bl_queue_peek(bl_queue *queue)
     if(queue->size == 0) {
         return NULL;
     }
-    return queue->tail->data;
+    return queue->head->data;
 }
 
 /**
@@ -104,30 +96,23 @@ void *bl_queue_peek(bl_queue *queue)
  */
 void *bl_queue_remove(bl_queue *queue, void *data, int (*cmp_func)(const void *elmData, const void *data))
 {
-    struct bl_queue_elm *elm = queue->head;
+    struct bl_queue_elm **prev = &queue->head;
+    struct bl_queue_elm *cur = queue->head;
     void *retData = NULL;
-    while(elm) {
-        if(cmp_func(elm->data, data) == 0) {
-            retData = elm->data;
-            queue->size--;
+    while(cur) {
+        if(cmp_func(cur->data, data) == 0) {
+            retData = cur->data;
             break;
         }
-        elm = elm->next;
+        prev = &cur->next;
+        cur = cur->next;
     }
     
-    if(elm) { // del found elm
-        if(elm->prev) {
-            elm->prev->next = elm->next;
-        } else { // deleting head elm
-            queue->head = elm->next;
-        }
-        if(elm->next) {
-            elm->next->prev = elm->prev;
-        } else { // deleting tail elm
-            queue->tail = elm->prev;
-        }
+    if(cur) { // del found elm
+    	*prev = cur->next;
+        queue->size--;
+    	free(cur);
     }
-    free(elm);
     
     return retData;
 }
@@ -157,7 +142,6 @@ void *bl_queue_modify(bl_queue *queue, void *data, void *newData, int (*cmp_func
     } else {
         retData = newData;
         bl_queue_enqueue(queue, newData);
-        queue->size++;
     }
     return retData;
 }
