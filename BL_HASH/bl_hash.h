@@ -22,7 +22,6 @@ void *bl_hashtable_modify(bl_hashtable *ht, void *key, size_t keyLength, void *n
 void bl_hashtable_foreach(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
 void bl_hashtable_foreach_remove(bl_hashtable *ht, void *userData, void (*func)(char *key, void *data, void *userData));
 void bl_hashtable_rehash(bl_hashtable *ht, size_t newTableSize);
-void bl_hashtable_rehash_auto(bl_hashtable *ht, float minFactor, float maxFactor);
 void bl_hashtable_free(bl_hashtable *ht);
 
 // TODO: delete debug function
