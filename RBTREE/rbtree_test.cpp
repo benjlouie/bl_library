@@ -9,7 +9,7 @@ int main()
 
 	srand((unsigned)time(NULL));
 
-	unsigned size = 100;
+	unsigned size = 10;
 	unsigned numRemoved = 0;
 	unsigned *nums = new unsigned[size];
 	unsigned *removed = new unsigned[size];

@@ -17,9 +17,10 @@ public:
 	RBTree(void);
 	~RBTree(void);
 
-	void insert(const K &key, const T &data);
+	//TODO: size(), count(), clear(), empty() methods, 
+	T& insert(const K &key, const T &data);
 	void remove(const K &key);
-	T operator[](const K &key);
+	T& operator[](const K &key);
 
 	//TODO: remove debug method
 	void print(void);
@@ -39,6 +40,7 @@ private:
 	Node *root_;
 	Node leaf_;
 
+	Node *peek(const K &key);
 	typename RBTree<K,T>::Node *grandparent(Node *n);
 	typename RBTree<K, T>::Node *uncle(Node *n);
 	typename RBTree<K, T>::Node *sibling(Node *n);
@@ -48,7 +50,6 @@ private:
 	void rotate_left(Node *n);
 	bool is_leaf(Node *n);
 	void replace_node(Node *n, Node *replacement);
-
 	void insert_case1(Node *n);
 	void insert_case2(Node *n);
 	void insert_case3(Node *n);
@@ -78,6 +79,27 @@ template <typename K, typename T>
 RBTree<K, T>::~RBTree(void)
 {
 	//TODO: free recursively
+}
+
+//TODO: replace similar operations in template with this method
+template <typename K, typename T>
+typename RBTree<K, T>::Node *
+RBTree<K, T>::peek(const K &key)
+{
+	Node *cur = root_;
+
+	while (cur != &leaf_) {
+		if (key < cur->key) {
+			cur = cur->left;
+		}
+		else if (key > cur->key) {
+			cur = cur->right;
+		}
+		else {
+			return cur;
+		}
+	}
+	return nullptr;
 }
 
 template <typename K, typename T>
@@ -243,7 +265,7 @@ void RBTree<K, T>::replace_node(Node *n, Node *replacement)
 
 
 template <typename K, typename T>
-void RBTree<K, T>::insert(const K &key, const T &data)
+T& RBTree<K, T>::insert(const K &key, const T &data)
 {
 	Node *n = new Node{ key, data, RBTree::Node::RED, nullptr, &leaf_, &leaf_ };
 
@@ -268,6 +290,9 @@ void RBTree<K, T>::insert(const K &key, const T &data)
 	*prevLink = n;
 
 	insert_case1(n);
+	size_++;
+
+	return n->data;
 }
 
 template <typename K, typename T>
@@ -375,6 +400,7 @@ void RBTree<K, T>::remove(const K &key)
 		}
 
 		remove_case0(removeNode);
+		size_--;
 	}
 }
 
@@ -501,9 +527,16 @@ void RBTree<K, T>::remove_case6(Node *n)
 }
 
 template <typename K, typename T>
-T RBTree<K, T>::operator[](const K &key)
+T& RBTree<K, T>::operator[](const K &key)
 {
-	return nullptr;
+	Node *node = peek(key);
+	if (node) {
+		//key exists
+		return node->data;
+	}
+
+	T data; //TODO: does this work on types with complex allocation?
+	return insert(key, data);
 }
 
 
@@ -520,7 +553,7 @@ void RBTree<K, T>::print(void)
 		q.pop();
 
 		if (cur != &leaf_) {
-			std::cout << cur->key << ", ";
+			std::cout << cur->key << ":" << cur->data << ", ";
 			q.push(cur->left);
 			q.push(cur->right);
 		}
