@@ -25,7 +25,7 @@ Contains my first attempt at pathfinding. Written with no prior knowledge of pat
 
 BL_QUEUE
 --------
-A generic queue library. Implemented using a doubly linked list.
+A generic queue library. Implemented using a singly linked list.
 
 BL_SLIST
 --------
@@ -43,10 +43,14 @@ BL_STRING
 ---------
 (old)Functions that manipulate strings.
 
-BL_Thread
+BL_THREAD
 ---------
 (old)Experiments with PThreads. Made when I was first learning how to program with multiple threads. Includes a multithreaded quicksort.
 
 BL_UTIL
 -------
 (old/new)Some utility functions. Includes a partition function and a quick select function.
+
+RBTREE
+------
+C++. Red black tree template. My first attempt at template programming.
