@@ -17,7 +17,10 @@ public:
 	RBTree(void);
 	~RBTree(void);
 
-	//TODO: size(), count(), clear(), empty() methods, 
+	size_t size(void);
+	size_t count(const K &key);
+	void clear(void);
+	bool empty(void);
 	T& insert(const K &key, const T &data);
 	void remove(const K &key);
 	T& operator[](const K &key);
@@ -40,7 +43,8 @@ private:
 	Node *root_;
 	Node leaf_;
 
-	Node *peek(const K &key);
+	size_t count_(Node *root, const K &key);
+	Node *peek(Node *root, const K &key);
 	typename RBTree<K,T>::Node *grandparent(Node *n);
 	typename RBTree<K, T>::Node *uncle(Node *n);
 	typename RBTree<K, T>::Node *sibling(Node *n);
@@ -81,12 +85,46 @@ RBTree<K, T>::~RBTree(void)
 	//TODO: free recursively
 }
 
+template <typename K, typename T>
+size_t RBTree<K, T>::size(void)
+{
+	return size_;
+}
+
+template <typename K, typename T>
+size_t RBTree<K, T>::count(const K &key)
+{
+	return count_(root_, key);
+}
+
+template <typename K, typename T>
+size_t RBTree<K, T>::count_(Node *root, const K &key)
+{
+	Node *cur = peek(root, key);
+	if (cur != &leaf_) {
+		return (1 + count_(cur->left, key) + count_(cur->right, key));
+	}
+	return 0;
+}
+
+template <typename K, typename T>
+void RBTree<K, T>::clear(void)
+{
+	//TODO: finish method
+}
+
+template <typename K, typename T>
+bool RBTree<K, T>::empty(void)
+{
+	return !size_;
+}
+
 //TODO: replace similar operations in template with this method
 template <typename K, typename T>
 typename RBTree<K, T>::Node *
-RBTree<K, T>::peek(const K &key)
+RBTree<K, T>::peek(Node *root, const K &key)
 {
-	Node *cur = root_;
+	Node *cur = root;
 
 	while (cur != &leaf_) {
 		if (key < cur->key) {
@@ -99,7 +137,7 @@ RBTree<K, T>::peek(const K &key)
 			return cur;
 		}
 	}
-	return nullptr;
+	return &leaf_;
 }
 
 template <typename K, typename T>
@@ -368,30 +406,16 @@ void RBTree<K, T>::insert_case5(Node *n)
 template <typename K, typename T>
 void RBTree<K, T>::remove(const K &key)
 {
-	Node *cur = root_;
-
-	while (cur != &leaf_) {
-		if (key < cur->key) {
-			cur = cur->left;
-		}
-		else if (key > cur->key) {
-			cur = cur->right;
-		}
-		else {
-			break;
-		}
-	}
+	Node *cur = peek(root_, key);
 
 	if (cur != &leaf_) {
 		//BST delete, then correct
 		Node *removeNode = cur;
 		if (cur->left != &leaf_) {
 			removeNode = predecessor(cur);
-			//removeNode->parent->right = removeNode->left;
 		}
 		else if (cur->right != &leaf_) {
 			removeNode = successor(cur);
-			//removeNode->parent->left = removeNode->right;
 		}
 		//swap replacement(removeNode) with cur
 		if (removeNode != cur) {
@@ -529,8 +553,8 @@ void RBTree<K, T>::remove_case6(Node *n)
 template <typename K, typename T>
 T& RBTree<K, T>::operator[](const K &key)
 {
-	Node *node = peek(key);
-	if (node) {
+	Node *node = peek(root_, key);
+	if (node != &leaf) {
 		//key exists
 		return node->data;
 	}
