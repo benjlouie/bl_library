@@ -22,8 +22,6 @@ int main()
 		std::cout << nums[i] << ", ";
 	}
 	std::cout << std::endl;
-	tree.print();
-	std::cout << std::endl << std::endl;
 
 	int key =  nums[rand() % size];
 	size_t elmCount = tree.count(key);
@@ -55,7 +53,8 @@ int main()
 	delete[] nums;
 	delete[] removed;
 
-	tree.print();
+	tree.clear();
+	std::cout << "size after clear: " << tree.size() << std::endl;
 
 	char c;
 	std::cin >> c;

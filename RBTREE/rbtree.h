@@ -3,12 +3,10 @@
 #ifndef BL_RBTREE_H
 #define BL_RBTREE_H
 
-//TODO: remove debug dependence
-#include <queue>
-#include <iostream>
+#include <functional>
 
-//TODO: use const for K and T
 //TODO: check if some allocator needs to be passed in
+//TODO: make iterator for class
 
 template <typename K, typename T>
 class RBTree
@@ -25,10 +23,7 @@ public:
 	void remove(const K &key);
 	T& operator[](const K &key);
 
-	//TODO: remove debug method
-	void print(void);
-
-protected:
+private:
 	struct Node {
 		K key;
 		T data;
@@ -38,22 +33,22 @@ protected:
 		Node *right;
 	};
 
-private:
 	size_t size_;
 	Node *root_;
 	Node leaf_;
 
 	size_t count_(Node *root, const K &key);
 	Node *peek(Node *root, const K &key);
-	typename RBTree<K,T>::Node *grandparent(Node *n);
-	typename RBTree<K, T>::Node *uncle(Node *n);
-	typename RBTree<K, T>::Node *sibling(Node *n);
-	typename RBTree<K, T>::Node *predecessor(Node *n);
-	typename RBTree<K, T>::Node *successor(Node *n);
+	Node *grandparent(Node *n);
+	Node *uncle(Node *n);
+	Node *sibling(Node *n);
+	Node *predecessor(Node *n);
+	Node *successor(Node *n);
 	void rotate_right(Node *n);
 	void rotate_left(Node *n);
 	bool is_leaf(Node *n);
 	void replace_node(Node *n, Node *replacement);
+
 	void insert_case1(Node *n);
 	void insert_case2(Node *n);
 	void insert_case3(Node *n);
@@ -66,6 +61,8 @@ private:
 	void remove_case4(Node *n);
 	void remove_case5(Node *n);
 	void remove_case6(Node *n);
+
+	void foreach_postorder(Node *root, std::function<void(Node *)> func);
 };
 
 
@@ -82,7 +79,7 @@ RBTree<K, T>::RBTree(void)
 template <typename K, typename T>
 RBTree<K, T>::~RBTree(void)
 {
-	//TODO: free recursively
+	clear();
 }
 
 template <typename K, typename T>
@@ -110,7 +107,9 @@ size_t RBTree<K, T>::count_(Node *root, const K &key)
 template <typename K, typename T>
 void RBTree<K, T>::clear(void)
 {
-	//TODO: finish method
+	foreach_postorder(root_, [](Node *cur){ delete cur; });
+	root_ = &leaf_;
+	size_ = 0;
 }
 
 template <typename K, typename T>
@@ -119,7 +118,7 @@ bool RBTree<K, T>::empty(void)
 	return !size_;
 }
 
-//TODO: replace similar operations in template with this method
+/* HELPER section */
 template <typename K, typename T>
 typename RBTree<K, T>::Node *
 RBTree<K, T>::peek(Node *root, const K &key)
@@ -217,7 +216,7 @@ void RBTree<K, T>::rotate_right(Node *n)
 {
 	Node *left = n->left;
 	Node *parent = nullptr;
-	Node **parentLink; //TODO: check this
+	Node **parentLink;
 
 	//get parentLink
 	if (n->parent) {
@@ -249,7 +248,7 @@ void RBTree<K, T>::rotate_left(Node *n)
 {
 	Node *right = n->right;
 	Node *parent = nullptr;
-	Node **parentLink; //TODO: check this
+	Node **parentLink;
 
 	//get parentLink
 	if (n->parent) {
@@ -300,8 +299,7 @@ void RBTree<K, T>::replace_node(Node *n, Node *replacement)
 	}
 }
 
-
-
+/* INSERT section */
 template <typename K, typename T>
 T& RBTree<K, T>::insert(const K &key, const T &data)
 {
@@ -403,6 +401,7 @@ void RBTree<K, T>::insert_case5(Node *n)
 		rotate_left(g);
 }
 
+/* REMOVE section */
 template <typename K, typename T>
 void RBTree<K, T>::remove(const K &key)
 {
@@ -428,7 +427,6 @@ void RBTree<K, T>::remove(const K &key)
 	}
 }
 
-//TODO: check this method
 template <typename K, typename T>
 void RBTree<K, T>::remove_case0(Node *n)
 {
@@ -550,6 +548,7 @@ void RBTree<K, T>::remove_case6(Node *n)
 	}
 }
 
+/* ACCESS section */
 template <typename K, typename T>
 T& RBTree<K, T>::operator[](const K &key)
 {
@@ -563,28 +562,16 @@ T& RBTree<K, T>::operator[](const K &key)
 	return insert(key, data);
 }
 
-
-
-//TODO: remove debug method
 template <typename K, typename T>
-void RBTree<K, T>::print(void)
+void RBTree<K, T>::foreach_postorder(Node *root, std::function<void(Node *)> func)
 {
-	std::queue<Node *> q;
-	q.push(root_);
-
-	while (q.size() > 0) {
-		Node *cur = q.front();
-		q.pop();
-
-		if (cur != &leaf_) {
-			std::cout << cur->key << ":" << cur->data << ", ";
-			q.push(cur->left);
-			q.push(cur->right);
-		}
-		else {
-			std::cout << "NULL, ";
-		}
+	if (root == &leaf_) {
+		return;
 	}
+	foreach_postorder(root->left, func);
+	foreach_postorder(root->right, func);
+	func(root);
 }
+
 
 #endif // !BL_RBTREE_H
