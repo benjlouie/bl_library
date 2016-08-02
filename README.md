@@ -51,6 +51,10 @@ BL_UTIL
 -------
 (old/new)Some utility functions. Includes a partition function and a quick select function.
 
+INTERVALTREE
+------
+C++. Interval tree template. built off the RBTree template below.
+
 RBTREE
 ------
 C++. Red black tree template. My first attempt at template programming.
