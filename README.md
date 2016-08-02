@@ -1,7 +1,7 @@
 # bl_library
-Functions created while studying computer science at NMT.
-Contains functions and small projects I found useful or interesting.
-Written in C.
+Functions/libraries created while studying computer science at NMT.
+Contains functions, libraries, and small projects I found useful or interesting.
+Written in C/C++.
 
 BL_BSTREE
 ---------
@@ -21,7 +21,7 @@ A generic heap and d-ary heap library. Supports min and max heaps. The d-ary hea
 
 BL_PATH
 -------
-Contains my first attempt at pathfinding. Written with no prior knowledge of pathfinding algorithms.
+Contains my first attempt at pathfinding. Written with no prior knowledge of pathfinding algorithms. See the bl_project repo for an A* implementation.
 
 BL_QUEUE
 --------
