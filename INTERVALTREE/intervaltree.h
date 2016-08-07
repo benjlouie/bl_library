@@ -1,9 +1,10 @@
 //insert/delete cases used straight from wikipedia
 
-#ifndef BL_IntervalTree_H
-#define BL_IntervalTree_H
+#ifndef BL_INTERVALTREE_H
+#define BL_INTERVALTREE_H
 
 #include <functional>
+#include <vector>
 
 //TODO: remove debug dependencies
 #include <iostream>
@@ -11,9 +12,6 @@
 
 //TODO: check if some allocator needs to be passed in
 //TODO: make iterator for class
-//TODO: transition to require interval
-//TODO: with dataCmp, count() will fail on duplicate nodes, maybe more failures, look into this
-//TODO: get max_ working
 
 template<typename K>
 struct Interval {
@@ -22,7 +20,7 @@ struct Interval {
 
 	inline void operator= (const Interval<K> &rhs){ this->low = rhs.low; this->high = rhs.high; }
 };
-template<typename K> inline bool operator==(const Interval<K> &lhs, const Interval<K> &rhs){ return lhs.low == rhs.low; }
+template<typename K> inline bool operator==(const Interval<K> &lhs, const Interval<K> &rhs){ return (lhs.low == rhs.low) && (lhs.high == rhs.high); }
 template<typename K> inline bool operator!=(const Interval<K> &lhs, const Interval<K> &rhs){ return !operator==(lhs, rhs); }
 template<typename K> inline bool operator< (const Interval<K> &lhs, const Interval<K> &rhs){ return lhs.low < rhs.low; }
 template<typename K> inline bool operator> (const Interval<K> &lhs, const Interval<K> &rhs){ return  operator< (rhs, lhs); }
@@ -43,6 +41,7 @@ public:
 	bool empty(void);
 	T& insert(const Interval<K> &key, const T &data);
 	void remove(const Interval<K> &key, const T *dataCmp = nullptr);
+	std::vector<std::pair<const Interval<K> &, T&>> *intersect(const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> *list = nullptr);
 	T& operator[](const Interval<K> &key);
 
 	//TODO: remove debug method
@@ -89,6 +88,7 @@ private:
 	void remove_case5(Node *n);
 	void remove_case6(Node *n);
 
+	std::vector<std::pair<const Interval<K> &, T&>> *intersect_(Node *root, const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> &intervals);
 	void foreach_postorder(Node *root, std::function<void(Node *)> func);
 };
 
@@ -125,11 +125,15 @@ size_t IntervalTree<K, T>::count(const Interval<K> &key, const T *dataCmp)
 template <typename K, typename T>
 size_t IntervalTree<K, T>::count_(Node *root, const Interval<K> &key, const T *dataCmp)
 {
-	Node *cur = peek(root, key, dataCmp);
-	if (cur != &leaf_) {
-		return (1 + count_(cur->left, key) + count_(cur->right, key));
+	Node *cur = peek(root, key);
+	if (cur == &leaf_) {
+		return 0;
 	}
-	return 0;
+
+	if (key == cur->key && (dataCmp == nullptr || cur->data == *dataCmp)) {
+		return (1 + count_(cur->left, key, dataCmp) + count_(cur->right, key, dataCmp));
+	}
+	return count_(cur->left, key, dataCmp) + count_(cur->right, key, dataCmp);
 }
 
 template <typename K, typename T>
@@ -160,7 +164,7 @@ IntervalTree<K, T>::peek(Node *root, const Interval<K> &key, const T *dataCmp)
 		else if (key > cur->key) {
 			cur = cur->right;
 		}
-		else { //equal key
+		else { //key.high may not equal cur->key.high, be aware
 			Node *ret = cur;
 			if (dataCmp && cur->data != *dataCmp) {
 				//dataCmp not equal, check subtrees (left first)
@@ -615,6 +619,42 @@ void IntervalTree<K, T>::remove_case6(Node *n)
 }
 
 /* ACCESS section */
+
+//TODO: elements of vector can still be changed (like with iterator), maybe copy instead of ref? (could be memory heavy)
+template <typename K, typename T>
+std::vector<std::pair<const Interval<K> &, T&>> *
+IntervalTree<K, T>::intersect(const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> *intervals)
+{
+	std::vector<std::pair<const Interval<K> &, T&>> *list = intervals;
+	if (list == nullptr) {
+		list = new std::vector<std::pair<const Interval<K> &, T&>>;
+	}
+
+	list = intersect_(root_, key, *list);
+	return list;
+}
+
+template <typename K, typename T>
+std::vector<std::pair<const Interval<K> &, T&>> *
+IntervalTree<K, T>::intersect_(Node *root, const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> &intervals)
+{
+	if (root == &leaf_) {
+		return &intervals;
+	}
+
+	if (key.low < root->max) {
+		intersect_(root->left, key, intervals);
+	}
+	if (key.low < root->key.high && key.high > root->key.low) {
+		intervals.push_back(std::pair<const Interval<K> &, T&>(root->key, root->data));
+	}
+	if (key.high > root->key.low) {
+		intersect_(root->right, key, intervals);
+	}
+
+	return &intervals;
+}
+
 template <typename K, typename T>
 T& IntervalTree<K, T>::operator[](const Interval<K> &key)
 {
