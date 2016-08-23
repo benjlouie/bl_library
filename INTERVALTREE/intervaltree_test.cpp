@@ -6,7 +6,7 @@
 int main()
 {
 	int size = 10;
-	int range = 10;
+	int range = 100;
 	IntervalTree<int, unsigned> tree;
 	Interval<int> *intervals = new Interval<int>[size];
 
@@ -24,6 +24,7 @@ int main()
 		std::cout << "(" << intervals[i].low << ":" << intervals[i].high << ")" << "|" << i << ", ";
 		tree.insert(intervals[i], i);
 	}
+	std::cout << std::endl << std::endl;
 	tree.print();
 	std::cout << std::endl << std::endl;
 
@@ -31,13 +32,21 @@ int main()
 	int low = rand() % range;
 	int high = rand() % range;
 	(low < high) ? test = Interval<int>{ low, high } : test = Interval<int>{ high, low };
+	std::vector<std::pair<const Interval<int> &, unsigned &>> *intersectList;
+	std::vector<std::pair<const Interval<int> &, unsigned &>> *withinList;
+	intersectList = tree.intersect(test);
+	withinList = tree.within(test);
 	std::cout << "finding intersects of (" << test.low << ":" << test.high << ")" << std::endl;
-	std::vector<std::pair<const Interval<int> &, unsigned &>> *list;
-	list = tree.intersect(test);
-	for (std::pair<Interval<int>, unsigned> elm : *list) {
+	for (std::pair<Interval<int>, unsigned> elm : *intersectList) {
 		std::cout << "(" << elm.first.low << ":" << elm.first.high << ")" << "|" << elm.second << ", ";
 	}
-	delete list;
+	std::cout << std::endl << std::endl;
+	std::cout << "finding intervals within (" << test.low << ":" << test.high << ")" << std::endl;
+	for (std::pair<Interval<int>, unsigned> elm : *withinList) {
+		std::cout << "(" << elm.first.low << ":" << elm.first.high << ")" << "|" << elm.second << ", ";
+	}
+	delete intersectList;
+	delete withinList;
 	std::cout << std::endl << std::endl;
 
 	int rem = 1;

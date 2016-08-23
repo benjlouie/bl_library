@@ -42,6 +42,7 @@ public:
 	T& insert(const Interval<K> &key, const T &data);
 	void remove(const Interval<K> &key, const T *dataCmp = nullptr);
 	std::vector<std::pair<const Interval<K> &, T&>> *intersect(const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> *list = nullptr);
+	std::vector<std::pair<const Interval<K> &, T&>> *within(const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> *list = nullptr);
 	T& operator[](const Interval<K> &key);
 
 	//TODO: remove debug method
@@ -89,6 +90,7 @@ private:
 	void remove_case6(Node *n);
 
 	std::vector<std::pair<const Interval<K> &, T&>> *intersect_(Node *root, const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> &intervals);
+	std::vector<std::pair<const Interval<K> &, T&>> *within_(Node *root, const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> &intervals);
 	void foreach_postorder(Node *root, std::function<void(Node *)> func);
 };
 
@@ -620,6 +622,8 @@ void IntervalTree<K, T>::remove_case6(Node *n)
 
 /* ACCESS section */
 
+//TODO: check intersect/within and make sure the booleans work (x:x) intersects (x:x) and is within (x:x)
+
 //TODO: elements of vector can still be changed (like with iterator), maybe copy instead of ref? (could be memory heavy)
 template <typename K, typename T>
 std::vector<std::pair<const Interval<K> &, T&>> *
@@ -642,14 +646,48 @@ IntervalTree<K, T>::intersect_(Node *root, const Interval<K> &key, std::vector<s
 		return &intervals;
 	}
 
-	if (key.low < root->max) {
+	if (key.low <= root->max) {
 		intersect_(root->left, key, intervals);
 	}
-	if (key.low < root->key.high && key.high > root->key.low) {
+	if (key.low <= root->key.high && key.high >= root->key.low) {
 		intervals.push_back(std::pair<const Interval<K> &, T&>(root->key, root->data));
 	}
-	if (key.high > root->key.low) {
+	if (key.high >= root->key.low) {
 		intersect_(root->right, key, intervals);
+	}
+
+	return &intervals;
+}
+
+template <typename K, typename T>
+std::vector<std::pair<const Interval<K> &, T&>> *
+IntervalTree<K, T>::within(const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> *intervals)
+{
+	std::vector<std::pair<const Interval<K> &, T&>> *list = intervals;
+	if (list == nullptr) {
+		list = new std::vector<std::pair<const Interval<K> &, T&>>;
+	}
+
+	list = within_(root_, key, *list);
+	return list;
+}
+
+template <typename K, typename T>
+std::vector<std::pair<const Interval<K> &, T&>> *
+IntervalTree<K, T>::within_(Node *root, const Interval<K> &key, std::vector<std::pair<const Interval<K> &, T&>> &intervals)
+{
+	if (root == &leaf_) {
+		return &intervals;
+	}
+
+	if (key.low <= root->max && key.low <= root->key.low) { //TODO: check 2nd test
+		within_(root->left, key, intervals);
+	}
+	if (key.low <= root->key.low && key.high >= root->key.high) {
+		intervals.push_back(std::pair<const Interval<K> &, T&>(root->key, root->data));
+	}
+	if (key.high >= root->key.low) { //TODO: need extra test here? think more about intervals within others
+		within_(root->right, key, intervals);
 	}
 
 	return &intervals;
