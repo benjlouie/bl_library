@@ -3,7 +3,7 @@
 
 PrefixTree::PrefixTree()
 {
-
+	root_.endpoint = false;
 }
 
 PrefixTree::~PrefixTree()
@@ -186,9 +186,19 @@ void PrefixTree::print()
 		for (unsigned i = 0; i < len; i++) {
 			Node *cur = q.front();
 			q.pop();
+
+			if (cur == nullptr) {
+				std::cout << " | ";
+				continue;
+			}
+
 			for (Node *i : cur->children) {
 				q.push(i);
 			}
+			if (cur->children.size() > 0) {
+				q.push(nullptr);
+			}
+
 			std::cout << cur->prefix;
 			if (cur->endpoint) {
 				std::cout << "*";
@@ -196,7 +206,9 @@ void PrefixTree::print()
 			if (cur->children.size() == 0) {
 				std::cout << ".";
 			}
-			std::cout << " | ";
+			if (q.front()){
+				std::cout << " , ";
+			}
 		}
 		std::cout << std::endl;
 	}
