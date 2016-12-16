@@ -17,6 +17,12 @@ void PrefixTree::insert(char *str)
 	insert(s);
 }
 
+void PrefixTree::insert(const char *str)
+{
+	std::string s = str;
+	insert(s);
+}
+
 void PrefixTree::insert(std::string &str)
 {
 	Node *cur = &root_;
@@ -38,7 +44,7 @@ void PrefixTree::insert(std::string &str)
 			return;
 		}
 
-		unsigned endPos = 0;
+		size_t endPos = 0;
 		if (childSearch(cur->children, str[strIndex], &endPos)) {
 			cur = cur->children[endPos];
 		}
@@ -57,6 +63,7 @@ void PrefixTree::insertInNode(Node *cur, size_t splitPos, std::string &str, size
 	//move cur down to new node
 	splitRight->children.swap(cur->children);
 	splitRight->prefix = cur->prefix.substr(splitPos);
+	splitRight->endpoint = cur->endpoint;
 	cur->prefix.erase(splitPos);
 	cur->endpoint = false;
 
@@ -113,39 +120,15 @@ size_t split(std::string &str1, std::string &str2, size_t str1Ind, size_t str2In
 	return count;
 }
 
-bool PrefixTree::contains(std::string &str)
+bool PrefixTree::childSearch(std::vector<Node *> &children, char key, size_t *endPos)
 {
-	return find(str) != nullptr;
-}
-
-//TODO: redo so it works with compressed nodes (like in insert)
-PrefixTree::Node *PrefixTree::find(std::string &str)
-{
-	Node *cur = &root_;
-	size_t len = str.size();
-
-	for (size_t strIndex = 0; strIndex < len; strIndex++) {
-		unsigned endPos = 0;
-		if (childSearch(cur->children, str[strIndex], &endPos)) {
-			cur = cur->children[endPos];
-		}
-		else {
-			return nullptr;
-		}
-	}
-
-	return cur;
-}
-
-bool PrefixTree::childSearch(std::vector<Node *> &children, char key, unsigned *endPos)
-{
-	unsigned left = 0;
-	unsigned right = children.size();
-	unsigned mid = 0;
+	size_t left = 0;
+	size_t right = children.size();
+	size_t mid = 0;
 
 	if (children.empty()) {
 		if (endPos) {
-			endPos = 0;
+			*endPos = 0;
 		}
 		return false;
 	}
@@ -174,6 +157,30 @@ bool PrefixTree::childSearch(std::vector<Node *> &children, char key, unsigned *
 	return false;
 }
 
+bool PrefixTree::contains(std::string &str)
+{
+	return find(str) != nullptr;
+}
+
+//TODO: redo so it works with compressed nodes (like in insert)
+PrefixTree::Node *PrefixTree::find(std::string &str)
+{
+	Node *cur = &root_;
+	size_t len = str.size();
+
+	for (size_t strIndex = 0; strIndex < len; strIndex++) {
+		size_t endPos = 0;
+		if (childSearch(cur->children, str[strIndex], &endPos)) {
+			cur = cur->children[endPos];
+		}
+		else {
+			return nullptr;
+		}
+	}
+
+	return cur;
+}
+
 
 //TODO: remove debug func
 void PrefixTree::print()
@@ -182,7 +189,7 @@ void PrefixTree::print()
 	q.push(&root_);
 
 	while (q.size() > 0) {
-		unsigned len = q.size();
+		size_t len = q.size();
 		for (unsigned i = 0; i < len; i++) {
 			Node *cur = q.front();
 			q.pop();
@@ -207,7 +214,7 @@ void PrefixTree::print()
 				std::cout << ".";
 			}
 			if (q.front()){
-				std::cout << " , ";
+				std::cout << " ";
 			}
 		}
 		std::cout << std::endl;
