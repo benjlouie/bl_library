@@ -29,7 +29,7 @@ void PrefixTree::insert(std::string &str)
 	size_t len = str.size();
 	size_t strIndex = 0;
 
-	while (strIndex < len) { //TODO: can probably take out comparison here
+	while (true) { //TODO: find way to improve this while loop
 		size_t splitPos = split(cur->prefix, str, 0, strIndex);
 		strIndex += splitPos;
 
@@ -94,6 +94,7 @@ void PrefixTree::insertAfterNode(Node *cur, size_t insPos, std::string &str, siz
 {
 	Node *add = new Node;
 	add->prefix = str.substr(strInd);
+	add->endpoint = true;
 
 	auto it = cur->children.begin();
 	it += insPos;
@@ -133,8 +134,8 @@ bool PrefixTree::childSearch(std::vector<Node *> &children, char key, size_t *en
 		return false;
 	}
 
+	mid = left + (right - left) / 2;
 	while (left < right) {
-		mid = left + (right - left) / 2;
 		char midChar = children[mid]->prefix[0];
 
 		if (key < midChar) {
@@ -149,6 +150,7 @@ bool PrefixTree::childSearch(std::vector<Node *> &children, char key, size_t *en
 			}
 			return true;
 		}
+		mid = left + (right - left) / 2;
 	}
 
 	if (endPos) {
@@ -162,23 +164,34 @@ bool PrefixTree::contains(std::string &str)
 	return find(str) != nullptr;
 }
 
-//TODO: redo so it works with compressed nodes (like in insert)
 PrefixTree::Node *PrefixTree::find(std::string &str)
 {
 	Node *cur = &root_;
+	size_t strInd = 0;
 	size_t len = str.size();
 
-	for (size_t strIndex = 0; strIndex < len; strIndex++) {
+	while (true) { //TODO: find way to improve this loop
+		size_t splitPos = split(cur->prefix, str, 0, strInd);
+		if (splitPos < cur->prefix.size()) {
+			//inside current prefix, str is not in tree
+			return nullptr;
+		}
+
+		//past end of current prefix
+		strInd += splitPos;
 		size_t endPos = 0;
-		if (childSearch(cur->children, str[strIndex], &endPos)) {
+		if (childSearch(cur->children, str[strInd], &endPos)) {
+			//child exists from the split
 			cur = cur->children[endPos];
 		}
 		else {
+			if (strInd == len && cur->endpoint) {
+				return cur;
+			}
+			//no suitable child
 			return nullptr;
 		}
 	}
-
-	return cur;
 }
 
 
@@ -213,7 +226,7 @@ void PrefixTree::print()
 			if (cur->children.size() == 0) {
 				std::cout << ".";
 			}
-			if (q.front()){
+			if (!q.empty() && q.front()){
 				std::cout << " ";
 			}
 		}
