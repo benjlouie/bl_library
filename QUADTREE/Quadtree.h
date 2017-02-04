@@ -23,7 +23,7 @@ struct Region
 		QT_0 = 0, QT_1, QT_2, QT_3, QT_MULT, QT_OUT
 	};
 
-	bool within(Region<K> &region);
+	bool within(const Region<K> &region);
 	Quadrants withinQuadrant(Region<K> &region);
 	bool intersect(Region<K> &region);
 	Region<K> getQuadrant(Quadrants quadrant);
@@ -72,11 +72,11 @@ inline bool Region<K>::operator==(const Region<K> &rhs) const
 
 // returns true if THIS is within region
 template<typename K>
-bool Region<K>::within(Region<K>& region)
+inline bool Region<K>::within(const Region<K>& region)
 {
 	return lowRow_ >= region.lowRow_
 		&& highRow_ <= region.highRow_
-		&& lowCol >= region.lowCol_
+		&& lowCol_ >= region.lowCol_
 		&& highCol_ <= region.highCol_;
 }
 
@@ -215,16 +215,15 @@ public:
 	Region<K> getBounds(void);
 	BD &getBoundsData(void);
 
-	//TODO: within and intersect methods
-	//vector<pair<Region<K>, T&>> getRegionsWithin(Region<K> &region)
-	//vector<pair<Region<K>, T&>> getRegionsIntersect(Region<K> &region)
+	std::vector<std::pair<Region<K>, T>> getRegionsWithin(Region<K> &region);
+	//TODO: intersect method
+	//std::vector<pair<Region<K>, T&>> getRegionsIntersect(Region<K> &region)
+	std::vector<std::pair<Region<K>, T>> getRegionsAll(void);
 
 private:
 	struct Node
 	{
-#ifdef _DEBUG
 		Region<K> quadrantBounds;
-#endif // DEBUG
 		std::unordered_map<Region<K>, std::vector<T>> regions;
 		std::array<Node *, 4> subQuadrants = { nullptr, nullptr, nullptr, nullptr };
 	} root_;
@@ -232,6 +231,8 @@ private:
 	BD boundsData_;
 	size_t size_;
 
+	size_t getRegionsWithinWalk(typename Quadtree<K, T, BD>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions);
+	size_t getRegionsAllWalk(typename Quadtree<K, T, BD>::Node *root, std::vector<std::pair<Region<K>, T>>& regions);
 	Node *getContainingNode(Region<K> &region, Region<K> *resultRegion = nullptr);
 };
 
@@ -258,7 +259,7 @@ void Quadtree<K, T, BD>::insert(Region<K> &region, T &data)
 
 	typename Region<K>::Quadrants destinationQuadrant = region.withinQuadrant(treeRegion);
 	while (destinationQuadrant != Region<K>::Quadrants::QT_OUT
-		&& destinationQuadrant != Region<K>::Quadrants::QT_MULT) { //TODO: don't need comparison, figure out way to redo loop
+		&& destinationQuadrant != Region<K>::Quadrants::QT_MULT) {
 		typename Quadtree<K, T, BD>::Node **quadrant = nullptr;
 
 		//must be subquadrant, go there directly
@@ -271,9 +272,7 @@ void Quadtree<K, T, BD>::insert(Region<K> &region, T &data)
 		else {
 			//add node
 			*quadrant = new typename Quadtree<K, T, BD>::Node;
-#ifdef _DEBUG
 			(*quadrant)->quadrantBounds = treeRegion.getQuadrant(destinationQuadrant);
-#endif // DEBUG
 			cur = *quadrant;
 		}
 
@@ -286,6 +285,7 @@ void Quadtree<K, T, BD>::insert(Region<K> &region, T &data)
 	size_++;
 }
 
+//TODO: have remove compress the tree back up as needed
 // removes all equivalent regions with equivalent data from the tree
 // returns the number of regions removed
 template<typename K, typename T, typename BD>
@@ -332,6 +332,72 @@ template<typename K, typename T, typename BD>
 inline BD & Quadtree<K, T, BD>::getBoundsData(void)
 {
 	return boundsData_;
+}
+
+template<typename K, typename T, typename BD>
+std::vector<std::pair<Region<K>, T>> Quadtree<K, T, BD>::getRegionsWithin(Region<K>& region)
+{
+	typename Quadtree<K, T, BD>::Node *topNode = this->getContainingNode(region);
+	std::vector<std::pair<Region<K>, T>> foundRegions;
+
+	getRegionsWithinWalk(topNode, region, foundRegions);
+
+	return foundRegions;
+}
+
+template<typename K, typename T, typename BD>
+std::vector<std::pair<Region<K>, T>> Quadtree<K, T, BD>::getRegionsAll(void)
+{
+	std::vector<std::pair<Region<K>, T>> regions;
+	getRegionsAllWalk(&root_, regions);
+
+	return regions;
+}
+
+template<typename K, typename T, typename BD>
+size_t Quadtree<K, T, BD>::getRegionsWithinWalk(typename Quadtree<K, T, BD>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions)
+{
+	size_t count = 0;
+
+	if (root->quadrantBounds.intersect(region)) {
+		//intersects node, check regions in this node and below
+		for (pair<Region<K>, std::vector<T>> nodeRegion : root->regions) {
+			if (nodeRegion.first.within(region)) {
+				for (T data : nodeRegion.second) {
+					//append all data
+					foundRegions.push_back(std::make_pair(nodeRegion.first, data));
+					count++;
+				}
+			}
+		}
+		
+		for (Node *subQuad : root->subQuadrants) {
+			if (subQuad != nullptr) {
+				count += getRegionsWithinWalk(subQuad, region, foundRegions);
+			}
+		}
+	}
+
+	return count;
+}
+
+template<typename K, typename T, typename BD>
+size_t Quadtree<K, T, BD>::getRegionsAllWalk(typename Quadtree<K, T, BD>::Node *root, std::vector<std::pair<Region<K>, T>>& regions)
+{
+	size_t count = 0;
+	for (auto nodeRegion : root->regions) {
+		for (T data : nodeRegion.second) {
+			regions.push_back(std::make_pair(nodeRegion.first, data));
+			count++;
+		}
+	}
+	for (Node *subQuad : root->subQuadrants) {
+		if (subQuad != nullptr) {
+			count += getRegionsAllWalk(subQuad, regions);
+		}
+	}
+
+	return count;
 }
 
 // finds the nearest quadtree node containing the given region
