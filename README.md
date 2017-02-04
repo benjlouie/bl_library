@@ -55,6 +55,14 @@ INTERVALTREE
 ------
 C++. Interval tree template. built off the RBTree template below.
 
+PREFIXTREE (work in progress)
+------
+C++. Compressed prefix tree. Uses standard C++ strings to denote the prefixes.
+
+QUADTREE (work in progress)
+------
+C++. Quadtree template. Specifically a region(rectangle) quadtree.
+
 RBTREE
 ------
 C++. Red black tree template. My first attempt at template programming.
