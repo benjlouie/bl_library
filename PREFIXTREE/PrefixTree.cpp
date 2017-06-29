@@ -201,14 +201,18 @@ void PrefixTree::print()
 	std::queue<Node *> q;
 	q.push(&root_);
 
+	std::cout << "* = inserted string\n";
+	std::cout << ". = end of tree string\n\n";
+
 	while (q.size() > 0) {
 		size_t len = q.size();
+		std::cout << '{';
 		for (unsigned i = 0; i < len; i++) {
 			Node *cur = q.front();
 			q.pop();
 
 			if (cur == nullptr) {
-				std::cout << " | ";
+				std::cout << "}{";
 				continue;
 			}
 
@@ -227,9 +231,9 @@ void PrefixTree::print()
 				std::cout << ".";
 			}
 			if (!q.empty() && q.front()){
-				std::cout << " ";
+				std::cout << "|";
 			}
 		}
-		std::cout << std::endl;
+		std::cout << "}\n";
 	}
 }

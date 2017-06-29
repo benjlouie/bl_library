@@ -7,3 +7,19 @@
 *.pdf
 *.log
 *.tlog
+*.sdf
+*.pdb
+
+# visual studio stuff
+*.db
+*.idb
+*.opendb
+*.sqlite
+*.ilk
+*.obj
+*.json
+*.sdf
+*.suo
+*.vs
+*.sln
+*.vcxproj*
