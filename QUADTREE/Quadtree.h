@@ -6,18 +6,21 @@
 template<typename K>
 struct Region
 {
-	K lowRow_;
-	K highRow_;
-	K lowCol_;
-	K highCol_;
+	K yLow_;
+	K yHigh_;
+	K xLow_;
+	K xHigh_;
 
-	Region(void) = default;
-	~Region(void) = default;
-	Region(K lowRow, K highRow, K lowCol, K highCol);
+	Region() = default;
+	~Region() = default;
+	Region(K xLow, K xHigh, K yLow, K yHigh);
 	inline Region<K> &operator= (const Region<K> &rhs);
 	inline bool operator==(const Region<K> &rhs) const;
 
-	//quadrants follow top to bottom left to right
+	//quadrants follow left to right, top to bottom
+	//QT_0 | QT_1
+	//-----|-----
+	//QT_2 | QT_3
 	enum Quadrants : unsigned
 	{
 		QT_0 = 0, QT_1, QT_2, QT_3, QT_MULT, QT_OUT
@@ -30,54 +33,53 @@ struct Region
 };
 
 template<typename K>
-Region<K>::Region(K lowRow, K highRow, K lowCol, K highCol)
+Region<K>::Region(K xLow, K xHigh, K yLow, K yHigh)
 {
-	if (lowRow < highRow) {
-		lowRow_ = lowRow;
-		highRow_ = highRow;
+	if (xLow < xHigh) {
+		xLow_ = xLow;
+		xHigh_ = xHigh;
 	}
 	else {
-		lowRow_ = highRow;
-		highRow_ = lowRow;
+		xLow_ = xHigh;
+		xHigh_ = xLow;
 	}
-
-	if (lowCol < highCol) {
-		lowCol_ = lowCol;
-		highCol_ = highCol;
+	if (yLow < yHigh) {
+		yLow_ = yLow;
+		yHigh_ = yHigh;
 	}
 	else {
-		lowCol_ = highCol;
-		highCol_ = lowCol;
+		yLow_ = yHigh;
+		yHigh_ = yLow;
 	}
 }
 
 template<typename K>
 inline Region<K>& Region<K>::operator=(const Region<K>& rhs)
 {
-	lowRow_ = rhs.lowRow_;
-	highRow_ = rhs.highRow_;
-	lowCol_ = rhs.lowCol_;
-	highCol_ = rhs.highCol_;
+	yLow_ = rhs.yLow_;
+	yHigh_ = rhs.yHigh_;
+	xLow_ = rhs.xLow_;
+	xHigh_ = rhs.xHigh_;
 	return *this;
 }
 
 template<typename K>
 inline bool Region<K>::operator==(const Region<K> &rhs) const
 {
-	return lowRow_ == rhs.lowRow_
-		&& highRow_ == rhs.highRow_
-		&& lowCol_ == rhs.lowCol_
-		&& highCol_ == rhs.highCol_;
+	return yLow_ == rhs.yLow_
+		&& yHigh_ == rhs.yHigh_
+		&& xLow_ == rhs.xLow_
+		&& xHigh_ == rhs.xHigh_;
 }
 
 // returns true if THIS is within region
 template<typename K>
 inline bool Region<K>::within(const Region<K>& region)
 {
-	return lowRow_ >= region.lowRow_
-		&& highRow_ <= region.highRow_
-		&& lowCol_ >= region.lowCol_
-		&& highCol_ <= region.highCol_;
+	return yLow_ >= region.yLow_
+		&& yHigh_ <= region.yHigh_
+		&& xLow_ >= region.xLow_
+		&& xHigh_ <= region.xHigh_;
 }
 
 // returns which quadrant of region THIS is within
@@ -86,34 +88,34 @@ template<typename K>
 typename Region<K>::Quadrants
 Region<K>::withinQuadrant(Region<K>& region)
 {
-	//check bounds, overlapping the edge counts as out (consistent with overlap of midRow/midCol)
-	if (lowRow_ <= region.lowRow_ || highRow_ >= region.highRow_
-		|| lowCol_ <= region.lowCol_ || highCol_ >= region.highCol_) {
+	//check bounds, overlapping the edge counts as out (consistent with overlap of yMid/xMid)
+	if (yLow_ <= region.yLow_ || yHigh_ >= region.yHigh_
+		|| xLow_ <= region.xLow_ || xHigh_ >= region.xHigh_) {
 		//out of bounds
 		return Quadrants::QT_OUT;
 	}
 
-	K midRow = region.lowRow_ + ((region.highRow_ - region.lowRow_) / 2);
-	K midCol = region.lowCol_ + ((region.highCol_ - region.lowCol_) / 2);
+	K yMid = region.yLow_ + ((region.yHigh_ - region.yLow_) / 2);
+	K xMid = region.xLow_ + ((region.xHigh_ - region.xLow_) / 2);
 
-	if (highRow_ < midRow) {
+	if (yHigh_ < yMid) {
 		//top half
-		if (highCol_ < midCol) {
+		if (xHigh_ < xMid) {
 			//top left quadrant (0,0)
 			return Quadrants::QT_0;
 		}
-		else if (lowCol_ > midCol) {
+		else if (xLow_ > xMid) {
 			//top right quadrant (0,1)
 			return Quadrants::QT_1;
 		}
 	}
-	else if (lowRow_ > midRow) {
+	else if (yLow_ > yMid) {
 		//bottom half
-		if (highCol_ < midCol) {
+		if (xHigh_ < xMid) {
 			//bottom left quadrant (1,0)
 			return Quadrants::QT_2;
 		}
-		else if (lowCol_ > midCol) {
+		else if (xLow_ > xMid) {
 			//bottom right quadrant (1,1)
 			return Quadrants::QT_3;
 		}
@@ -127,8 +129,8 @@ Region<K>::withinQuadrant(Region<K>& region)
 template<typename K>
 bool Region<K>::intersect(Region<K>& region)
 {
-	return (lowRow_ <= region.highRow_ && highRow_ >= region.lowRow_) 
-		&& (lowCol_ <= region.highCol_ && highCol_ >= region.lowCol_);
+	return (yLow_ <= region.yHigh_ && yHigh_ >= region.yLow_) 
+		&& (xLow_ <= region.xHigh_ && xHigh_ >= region.xLow_);
 }
 
 // returns region describing the designated subquadrant of THIS
@@ -136,25 +138,25 @@ template<typename K>
 Region<K> Region<K>::getQuadrant(Quadrants quadrant)
 {
 	Region<K> subRegion = *this;
-	K midRow = subRegion.lowRow_ + (subRegion.highRow_ - subRegion.lowRow_) / 2;
-	K midCol = subRegion.lowCol_ + (subRegion.highCol_ - subRegion.lowCol_) / 2;
+	K yMid = subRegion.yLow_ + (subRegion.yHigh_ - subRegion.yLow_) / 2;
+	K xMid = subRegion.xLow_ + (subRegion.xHigh_ - subRegion.xLow_) / 2;
 	switch (quadrant)
 	{
 	case Region<K>::Quadrants::QT_0:
-		subRegion.highRow_ = midRow;
-		subRegion.highCol_ = midCol;
+		subRegion.yHigh_ = yMid;
+		subRegion.xHigh_ = xMid;
 		break;
 	case Region<K>::Quadrants::QT_1:
-		subRegion.highRow_ = midRow;
-		subRegion.lowCol_ = midCol;
+		subRegion.yHigh_ = yMid;
+		subRegion.xLow_ = xMid;
 		break;
 	case Region<K>::Quadrants::QT_2:
-		subRegion.lowRow_ = midRow;
-		subRegion.highCol_ = midCol;
+		subRegion.yLow_ = yMid;
+		subRegion.xHigh_ = xMid;
 		break;
 	case Region<K>::Quadrants::QT_3:
-		subRegion.lowRow_ = midRow;
-		subRegion.lowCol_ = midCol;
+		subRegion.yLow_ = yMid;
+		subRegion.xLow_ = xMid;
 		break;
 	default:
 		break;
@@ -177,10 +179,10 @@ namespace std {
 
 			// Compute individual hash values for first
 			hash<K> hasher;
-			size_t hash1 = hasher(region.lowRow_);
-			size_t hash2 = hasher(region.highRow_);
-			size_t hash3 = hasher(region.lowCol_);
-			size_t hash4 = hasher(region.lowCol_);
+			size_t hash1 = hasher(region.yLow_);
+			size_t hash2 = hasher(region.yHigh_);
+			size_t hash3 = hasher(region.xLow_);
+			size_t hash4 = hasher(region.xLow_);
 
 			//combine hash values using the method in boost::hash_combine
 			size_t hashFinal = hash1;
@@ -202,22 +204,20 @@ namespace std {
 // K - region type
 // T - data type
 // BD - type for data about the bounds
-template<typename K, typename T, typename BD = T>
+template<typename K, typename T>
 class Quadtree
 {
 public:
-	Quadtree(Region<K> &bounds, BD &boundsData);
+	Quadtree(Region<K> &bounds);
 	~Quadtree() = default;
 
 	void insert(Region<K> &region, T &data);
 	size_t remove(Region<K> &region, T &data);
 	size_t remove(Region<K> &region);
 	Region<K> getBounds(void);
-	BD &getBoundsData(void);
 
 	std::vector<std::pair<Region<K>, T>> getRegionsWithin(Region<K> &region);
-	//TODO: intersect method
-	//std::vector<pair<Region<K>, T&>> getRegionsIntersect(Region<K> &region)
+	std::vector<std::pair<Region<K>, T>> getRegionsIntersect(Region<K> &region);
 	std::vector<std::pair<Region<K>, T>> getRegionsAll(void);
 
 private:
@@ -228,55 +228,47 @@ private:
 		std::array<Node *, 4> subQuadrants = { nullptr, nullptr, nullptr, nullptr };
 	} root_;
 	Region<K> bounds_;
-	BD boundsData_;
 	size_t size_;
 
-	size_t getRegionsWithinWalk(typename Quadtree<K, T, BD>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions);
-	size_t getRegionsAllWalk(typename Quadtree<K, T, BD>::Node *root, std::vector<std::pair<Region<K>, T>>& regions);
+	size_t getRegionsWithinWalk(typename Quadtree<K, T>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions);
+	size_t getRegionsIntersectWalk(typename Quadtree<K, T>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions);
+	size_t getRegionsAllWalk(typename Quadtree<K, T>::Node *root, std::vector<std::pair<Region<K>, T>>& regions);
 	Node *getContainingNode(Region<K> &region, Region<K> *resultRegion = nullptr);
 };
 
 // creates a quadtree with the given bounds
 // any extra information can be put in boundsData
-template<typename K, typename T, typename BD>
-Quadtree<K, T, BD>::Quadtree(Region<K> &bounds, BD &boundsData)
+template<typename K, typename T>
+Quadtree<K, T>::Quadtree(Region<K> &bounds)
 {
 	bounds_ = bounds;
-	boundsData_ = boundsData;
-#ifdef _DEBUG
 	root_.quadrantBounds = bounds;
-#endif // DEBUG
-
 	size_ = 0;
 }
 
 //inserts the given region into the quadtree
-template<typename K, typename T, typename BD>
-void Quadtree<K, T, BD>::insert(Region<K> &region, T &data)
+template<typename K, typename T>
+void Quadtree<K, T>::insert(Region<K> &region, T &data)
 {
-	typename Quadtree<K, T, BD>::Node *cur = &root_;
+	typename Quadtree<K, T>::Node *cur = &root_;
 	Region<K> treeRegion = bounds_;
 
 	typename Region<K>::Quadrants destinationQuadrant = region.withinQuadrant(treeRegion);
 	while (destinationQuadrant != Region<K>::Quadrants::QT_OUT
 		&& destinationQuadrant != Region<K>::Quadrants::QT_MULT) {
-		typename Quadtree<K, T, BD>::Node **quadrant = nullptr;
+		typename Quadtree<K, T>::Node **quadrant = nullptr;
 
 		//must be subquadrant, go there directly
 		quadrant = &cur->subQuadrants[destinationQuadrant];
 
-		if (*quadrant) {
-			//node already exists
-			cur = *quadrant;
-		}
-		else {
-			//add node
-			*quadrant = new typename Quadtree<K, T, BD>::Node;
+		if (!(*quadrant)) {
+			//add node if needed
+			*quadrant = new typename Quadtree<K, T>::Node;
 			(*quadrant)->quadrantBounds = treeRegion.getQuadrant(destinationQuadrant);
-			cur = *quadrant;
 		}
+		cur = *quadrant;
 
-		treeRegion = treeRegion.getQuadrant(destinationQuadrant);
+		treeRegion = cur->quadrantBounds;
 		destinationQuadrant = region.withinQuadrant(treeRegion);
 	}
 
@@ -288,8 +280,8 @@ void Quadtree<K, T, BD>::insert(Region<K> &region, T &data)
 //TODO: have remove compress the tree back up as needed
 // removes all equivalent regions with equivalent data from the tree
 // returns the number of regions removed
-template<typename K, typename T, typename BD>
-size_t Quadtree<K, T, BD>::remove(Region<K>& region, T & data)
+template<typename K, typename T>
+size_t Quadtree<K, T>::remove(Region<K>& region, T & data)
 {
 	Node *container = getContainingNode(region);
 
@@ -311,8 +303,8 @@ size_t Quadtree<K, T, BD>::remove(Region<K>& region, T & data)
 
 // removes all equivalent regions from the tree
 // returns the number of regions removed
-template<typename K, typename T, typename BD>
-size_t Quadtree<K, T, BD>::remove(Region<K> & region)
+template<typename K, typename T>
+size_t Quadtree<K, T>::remove(Region<K>& region)
 {
 	Node *container = getContainingNode(region);
 	size_t countRemoved = container->regions.erase(region);
@@ -321,23 +313,16 @@ size_t Quadtree<K, T, BD>::remove(Region<K> & region)
 }
 
 // returns a region depicting the outlining bounds of the quadtree
-template<typename K, typename T, typename BD>
-Region<K> Quadtree<K, T, BD>::getBounds(void)
+template<typename K, typename T>
+Region<K> Quadtree<K, T>::getBounds(void)
 {
 	return bounds_;
 }
 
-// returns reference to the bounds data
-template<typename K, typename T, typename BD>
-inline BD & Quadtree<K, T, BD>::getBoundsData(void)
+template<typename K, typename T>
+std::vector<std::pair<Region<K>, T>> Quadtree<K, T>::getRegionsWithin(Region<K>& region)
 {
-	return boundsData_;
-}
-
-template<typename K, typename T, typename BD>
-std::vector<std::pair<Region<K>, T>> Quadtree<K, T, BD>::getRegionsWithin(Region<K>& region)
-{
-	typename Quadtree<K, T, BD>::Node *topNode = this->getContainingNode(region);
+	typename Quadtree<K, T>::Node *topNode = this->getContainingNode(region);
 	std::vector<std::pair<Region<K>, T>> foundRegions;
 
 	getRegionsWithinWalk(topNode, region, foundRegions);
@@ -345,8 +330,18 @@ std::vector<std::pair<Region<K>, T>> Quadtree<K, T, BD>::getRegionsWithin(Region
 	return foundRegions;
 }
 
-template<typename K, typename T, typename BD>
-std::vector<std::pair<Region<K>, T>> Quadtree<K, T, BD>::getRegionsAll(void)
+template<typename K, typename T>
+std::vector<std::pair<Region<K>, T>> Quadtree<K, T>::getRegionsIntersect(Region<K>& region)
+{
+	std::vector<std::pair<Region<K>, T>> foundRegions;
+
+	getRegionsIntersectWalk(&root_, region, foundRegions);
+
+	return foundRegions;
+}
+
+template<typename K, typename T>
+std::vector<std::pair<Region<K>, T>> Quadtree<K, T>::getRegionsAll(void)
 {
 	std::vector<std::pair<Region<K>, T>> regions;
 	getRegionsAllWalk(&root_, regions);
@@ -354,8 +349,8 @@ std::vector<std::pair<Region<K>, T>> Quadtree<K, T, BD>::getRegionsAll(void)
 	return regions;
 }
 
-template<typename K, typename T, typename BD>
-size_t Quadtree<K, T, BD>::getRegionsWithinWalk(typename Quadtree<K, T, BD>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions)
+template<typename K, typename T>
+size_t Quadtree<K, T>::getRegionsWithinWalk(typename Quadtree<K, T>::Node* root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions)
 {
 	size_t count = 0;
 
@@ -381,8 +376,35 @@ size_t Quadtree<K, T, BD>::getRegionsWithinWalk(typename Quadtree<K, T, BD>::Nod
 	return count;
 }
 
-template<typename K, typename T, typename BD>
-size_t Quadtree<K, T, BD>::getRegionsAllWalk(typename Quadtree<K, T, BD>::Node *root, std::vector<std::pair<Region<K>, T>>& regions)
+template<typename K, typename T>
+size_t Quadtree<K, T>::getRegionsIntersectWalk(typename Quadtree<K, T>::Node * root, Region<K>& region, std::vector<std::pair<Region<K>, T>>& foundRegions)
+{
+	size_t count = 0;
+
+	if (root->quadrantBounds.intersect(region)) {
+		//intersects node, check regions in this node and below
+		for (pair<Region<K>, std::vector<T>> nodeRegion : root->regions) {
+			if (nodeRegion.first.intersect(region)) {
+				for (T data : nodeRegion.second) {
+					//append all data
+					foundRegions.push_back(std::make_pair(nodeRegion.first, data));
+					count++;
+				}
+			}
+		}
+
+		for (Node *subQuad : root->subQuadrants) {
+			if (subQuad != nullptr) {
+				count += getRegionsIntersectWalk(subQuad, region, foundRegions);
+			}
+		}
+	}
+
+	return count;
+}
+
+template<typename K, typename T>
+size_t Quadtree<K, T>::getRegionsAllWalk(typename Quadtree<K, T>::Node *root, std::vector<std::pair<Region<K>, T>>& regions)
 {
 	size_t count = 0;
 	for (auto nodeRegion : root->regions) {
@@ -404,9 +426,9 @@ size_t Quadtree<K, T, BD>::getRegionsAllWalk(typename Quadtree<K, T, BD>::Node *
 // if the exact node doesn't exists, finds the closest ancestor
 // returns pointer to the found quadtree node
 // if resultRegion is not null, sets it to the found node's region
-template<typename K, typename T, typename BD>
-typename Quadtree<K, T, BD>::Node * 
-Quadtree<K, T, BD>::getContainingNode(Region<K> & region, Region<K> *resultRegion)
+template<typename K, typename T>
+typename Quadtree<K, T>::Node * 
+Quadtree<K, T>::getContainingNode(Region<K> & region, Region<K> *resultRegion)
 {
 	Node *cur = &root_;
 	typename Region<K>::Quadrants quadrant;
